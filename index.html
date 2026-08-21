@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>삼단논법 게시판</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/vis-network.min.css">
+
+<style>
+  :root{
+    --bg:#12181a;
+    --panel:#1b2325;
+    --panel-2:#212b2d;
+    --chalk:#f3f1e7;
+    --chalk-dim:#a9b6b4;
+    --accent:#e8c468;
+    --accent-dim:#b98f3a;
+    --blue:#7fb3d5;
+    --pink:#e2a6c5;
+    --danger:#e08585;
+    --danger-dim:#a94d4d;
+    --ok:#8fcb9b;
+    --line: rgba(243,241,231,0.16);
+    --radius: 10px;
+  }
+
+  *{ box-sizing:border-box; }
+
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse at top left, rgba(232,196,104,0.05), transparent 45%),
+      radial-gradient(ellipse at bottom right, rgba(127,179,213,0.06), transparent 45%),
+      var(--bg);
+    color:var(--chalk);
+    font-family:'IBM Plex Sans KR', -apple-system, sans-serif;
+    min-height:100vh;
+    padding:32px 16px 64px;
+  }
+
+  .board{
+    max-width:760px;
+    margin:0 auto;
+  }
+
+  header{ margin-bottom:32px; }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    letter-spacing:0.14em;
+    font-size:12px;
+    color:var(--accent);
+    margin:0 0 10px;
+    text-transform:uppercase;
+  }
+  h1{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:clamp(26px,5vw,36px);
+    margin:0 0 8px;
+    letter-spacing:-0.01em;
+  }
+  .sub{
+    color:var(--chalk-dim);
+    font-size:14px;
+    margin:0;
+    line-height:1.6;
+  }
+
+  .hidden{ display:none !important; }
+
+  /* ---------- input groups ---------- */
+  .group{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px 16px 14px;
+    margin-bottom:16px;
+    position:relative;
+  }
+  .group-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.1em;
+    color:var(--chalk-dim);
+    text-transform:uppercase;
+    margin-bottom:12px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .group-remove{
+    background:none;
+    border:none;
+    color:var(--danger);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    cursor:pointer;
+    opacity:0.7;
+    letter-spacing:0.05em;
+  }
+  .group-remove:hover{ opacity:1; text-decoration:underline; }
+
+  .row{
+    display:grid;
+    grid-template-columns: 62px minmax(0,1fr) 90px minmax(0,1fr) 96px;
+    gap:6px;
+    align-items:center;
+    padding:9px 0;
+    border-bottom:1px dashed var(--line);
+  }
+  .row:last-child{ border-bottom:none; }
+
+  .badge{
+    width:22px; height:22px;
+    border:1px solid var(--accent-dim);
+    border-radius:50%;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--accent);
+    flex:0 0 auto;
+  }
+  .word-cell{ display:flex; align-items:center; gap:6px; min-width:0; }
+
+  select, input[type="text"]{
+    background:transparent;
+    border:none;
+    border-bottom:1px solid var(--line);
+    color:var(--chalk);
+    font-family:'IBM Plex Sans KR', sans-serif;
+    font-size:14px;
+    padding:6px 2px;
+    width:100%;
+    min-width:0;
+    outline:none;
+    border-radius:0;
+    appearance:none;
+    -webkit-appearance:none;
+  }
+  input[type="text"]{
+    border-bottom:1px dashed var(--line);
+  }
+  input[type="text"]::placeholder{ color:rgba(169,182,180,0.5); }
+  input[type="text"]:focus, select:focus{
+    border-bottom-color:var(--accent);
+  }
+  select{
+    background-image: linear-gradient(45deg, transparent 50%, var(--chalk-dim) 50%), linear-gradient(135deg, var(--chalk-dim) 50%, transparent 50%);
+    background-position: calc(100% - 10px) 55%, calc(100% - 5px) 55%;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat:no-repeat;
+    padding-right:16px;
+    font-size:13px;
+    color:var(--chalk-dim);
+    cursor:pointer;
+  }
+  select.quant{ color:var(--blue); font-weight:500; }
+  select.copula{ color:var(--accent); font-weight:500; }
+  option{ background:var(--panel-2); color:var(--chalk); }
+
+  /* ---------- buttons ---------- */
+  .actions{
+    display:flex;
+    gap:10px;
+    margin-top:20px;
+    flex-wrap:wrap;
+  }
+  .btn{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    letter-spacing:0.03em;
+    padding:12px 20px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:transparent;
+    color:var(--chalk);
+    cursor:pointer;
+    transition: border-color .15s ease, background .15s ease, color .15s ease;
+    flex:1 1 auto;
+    text-align:center;
+  }
+  .btn:hover{ border-color:var(--chalk-dim); }
+  .btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .btn-primary{
+    background:var(--accent);
+    color:#1b1503;
+    border-color:var(--accent);
+    font-weight:600;
+    flex:2 1 auto;
+  }
+  .btn-primary:hover{ background:#f0cf7c; }
+  .btn-ghost{ color:var(--chalk-dim); }
+  .btn-secondary{
+    border-color:var(--blue);
+    color:var(--blue);
+  }
+  .btn-secondary:hover{ background:rgba(127,179,213,0.08); }
+  .btn.small{ padding:8px 14px; font-size:12px; flex:0 0 auto; }
+
+  /* ---------- result view ---------- */
+  .result-card, .eval-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px 16px;
+    margin-bottom:16px;
+  }
+  .result-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:12px;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .result-head h2, .eval-card h3{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:17px;
+    margin:0;
+    font-weight:700;
+  }
+  #network{
+    height:460px;
+    width:100%;
+    background:
+      linear-gradient(var(--line) 1px, transparent 1px) 0 0/28px 28px,
+      linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0/28px 28px,
+      var(--panel-2);
+    border-radius:8px;
+    border:1px solid var(--line);
+    overflow:hidden;
+  }
+  .hint{
+    font-size:12px;
+    color:var(--chalk-dim);
+    margin:10px 2px 0;
+  }
+
+  .eval-card ul{
+    list-style:none;
+    margin:0; padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .eval-card li{
+    font-size:13.5px;
+    line-height:1.55;
+    padding:10px 12px;
+    border-radius:6px;
+    border-left:3px solid var(--danger);
+    background:rgba(224,133,133,0.08);
+    color:var(--chalk);
+  }
+  .eval-card li.ok{
+    border-left-color:var(--ok);
+    background:rgba(143,203,155,0.08);
+  }
+
+  .legend{
+    display:flex;
+    gap:16px;
+    flex-wrap:wrap;
+    font-size:11.5px;
+    color:var(--chalk-dim);
+    margin-top:12px;
+    font-family:'IBM Plex Mono', monospace;
+  }
+  .legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .legend i{ width:16px; height:0; border-top:2px solid var(--blue); display:inline-block; }
+  .legend i.dash{ border-top:2px dashed var(--pink); }
+  .legend b{ color:var(--danger); font-style:normal; }
+
+  @media (max-width:520px){
+    .row{
+      grid-template-columns: 22px 1fr 1fr;
+      grid-template-areas:
+        "b1 quant quant"
+        "b1 wl wl"
+        "b2 particle particle"
+        "b2 wr wr"
+        ". copula copula";
+      row-gap:4px;
+      padding:12px 0;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="board">
+
+  <header>
+    <p class="eyebrow">Syllogism Board · 三段論法</p>
+    <h1>삼단논법 게시판</h1>
+    <p class="sub">문장을 입력하면 단어 사이의 관계를 그래프와 다이어그램으로 그려주고, 논리적 결함을 점검해드립니다.</p>
+  </header>
+
+  <!-- ============ INPUT VIEW ============ -->
+  <main id="inputView">
+    <div id="groups"></div>
+
+    <div class="actions">
+      <button id="addBtn" class="btn btn-ghost">+ 추가</button>
+      <button id="doneBtn" class="btn btn-primary">완료</button>
+    </div>
+  </main>
+
+  <!-- ============ RESULT VIEW ============ -->
+  <main id="resultView" class="hidden">
+
+    <div class="result-card">
+      <div class="result-head">
+        <h2 id="viewTitle">논리 그래프</h2>
+        <button id="saveImgBtn" class="btn btn-ghost small">이미지로 저장</button>
+      </div>
+      <div id="network"></div>
+      <p class="hint" id="dragHint">노드를 드래그해서 위치를 자유롭게 옮길 수 있습니다.</p>
+      <div class="legend">
+        <span><i></i> 모든 (전칭)</span>
+        <span><i class="dash"></i> 어떤 (특칭)</span>
+        <span><b>×</b> 부정(아니다)</span>
+      </div>
+    </div>
+
+    <div class="eval-card">
+      <h3>논리성 평가</h3>
+      <ul id="evalList"></ul>
+    </div>
+
+    <div class="actions">
+      <button id="toggleBtn" class="btn btn-secondary">다이어그램으로 보기</button>
+      <button id="backBtn" class="btn btn-ghost">다시 입력하기</button>
+    </div>
+  </main>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var groupsEl = document.getElementById('groups');
+  var groupCount = 0;
+
+  var PARTICLE_OPTS = ['은','는','이 아닌 것은','가 아닌 것은'];
+  var COPULA_OPTS   = ['이다','다','가 아니다','이 아니다'];
+
+  function optionsHTML(list){
+    return list.map(function(v){ return '<option value="'+v+'">'+v+'</option>'; }).join('');
+  }
+
+  function rowHTML(){
+    return (
+      '<div class="row">' +
+        '<div class="word-cell"><span class="badge js-badge-l"></span>' +
+          '<select class="quant"><option value="모든">모든</option><option value="어떤">어떤</option></select>' +
+        '</div>' +
+        '<input type="text" class="wordLeft" placeholder="단어 입력">' +
+        '<select class="particle">' + optionsHTML(PARTICLE_OPTS) + '</select>' +
+        '<div class="word-cell"><input type="text" class="wordRight" placeholder="단어 입력"><span class="badge js-badge-r"></span></div>' +
+        '<select class="copula">' + optionsHTML(COPULA_OPTS) + '</select>' +
+      '</div>'
+    );
+  }
+
+  function addGroup(){
+    groupCount++;
+    var g = document.createElement('div');
+    g.className = 'group';
+    g.dataset.groupId = groupCount;
+    var removeBtn = groupCount > 1 ? '<button type="button" class="group-remove" onclick="this.closest(\'.group\').remove(); window.__renumber();">삭제</button>' : '';
+    g.innerHTML =
+      '<div class="group-label"><span>세트 ' + groupCount + '</span>' + removeBtn + '</div>' +
+      rowHTML() + rowHTML() + rowHTML();
+    groupsEl.appendChild(g);
+    renumberBadges();
+  }
+
+  function renumberBadges(){
+    var rows = groupsEl.querySelectorAll('.row');
+    var n = 1;
+    rows.forEach(function(row){
+      row.querySelector('.js-badge-l').textContent = n++;
+      row.querySelector('.js-badge-r').textContent = n++;
+    });
+  }
+  window.__renumber = renumberBadges;
+
+  document.getElementById('addBtn').addEventListener('click', addGroup);
+  addGroup(); // start with one set of 3 rows
+
+  // ---------------------------------------------------------------
+  // Collect statements from the form
+  // ---------------------------------------------------------------
+  function collectStatements(){
+    var rows = groupsEl.querySelectorAll('.row');
+    var statements = [];
+    rows.forEach(function(row){
+      var quant = row.querySelector('.quant').value;
+      var wl = row.querySelector('.wordLeft').value.trim();
+      var particle = row.querySelector('.particle').value;
+      var wr = row.querySelector('.wordRight').value.trim();
+      var copula = row.querySelector('.copula').value;
+      if(!wl || !wr) return;
+
+      var leftNeg = (particle === '이 아닌 것은' || particle === '가 아닌 것은');
+      var rightNeg = (copula === '가 아니다' || copula === '이 아니다');
+
+      statements.push({
+        from: wl + (leftNeg ? '×' : ''),
+        to:   wr + (rightNeg ? '×' : ''),
+        solid: (quant === '모든')
+      });
+    });
+    return statements;
+  }
+
+  // ---------------------------------------------------------------
+  // Build graph data (nodes / edges) from statements
+  // ---------------------------------------------------------------
+  function buildGraphData(statements){
+    var nodeMap = new Map();
+    var nodes = [];
+    var edges = [];
+
+    function styleFor(label){
+      var negated = label.indexOf('×') !== -1;
+      if(negated){
+        return { color:{ background:'#e08585', border:'#a94d4d', highlight:{background:'#eaa0a0', border:'#a94d4d'} }, font:{ color:'#1b0e0e' } };
+      }
+      return { color:{ background:'#e8c468', border:'#b98f3a', highlight:{background:'#f0d484', border:'#b98f3a'} }, font:{ color:'#14181a' } };
+    }
+
+    function getId(label){
+      if(!nodeMap.has(label)){
+        var id = nodeMap.size + 1;
+        var style = styleFor(label);
+        nodeMap.set(label, id);
+        nodes.push(Object.assign({ id:id, label:label, shape:'ellipse',
+          font:Object.assign({face:'IBM Plex Mono', size:16}, style.font),
+          borderWidth:2, margin:10 }, { color: style.color }));
+      }
+      return nodeMap.get(label);
+    }
+
+    statements.forEach(function(s){
+      var fromId = getId(s.from);
+      var toId = getId(s.to);
+      edges.push({
+        from: fromId, to: toId,
+        dashes: !s.solid,
+        arrows: 'to',
+        color: { color: s.solid ? '#7fb3d5' : '#e2a6c5', highlight: s.solid ? '#7fb3d5' : '#e2a6c5' },
+        width: 2,
+        smooth: { type:'continuous' }
+      });
+    });
+
+    return { nodes:nodes, edges:edges, nodeMap:nodeMap };
+  }
+
+  // ---------------------------------------------------------------
+  // Logic evaluation heuristics
+  // ---------------------------------------------------------------
+  function evaluateLogic(statements){
+    var issues = [];
+
+    // adjacency (directed)
+    var adj = {};
+    statements.forEach(function(e){
+      adj[e.from] = adj[e.from] || [];
+      adj[e.from].push(e);
+    });
+
+    // 1) direct contradiction: same source pointing to word and word× with both universal
+    var fromMap = {};
+    statements.forEach(function(e){
+      fromMap[e.from] = fromMap[e.from] || [];
+      fromMap[e.from].push(e);
+    });
+    Object.keys(fromMap).forEach(function(from){
+      var list = fromMap[from];
+      for(var i=0;i<list.length;i++){
+        for(var j=i+1;j<list.length;j++){
+          var e1=list[i], e2=list[j];
+          var base1 = e1.to.replace('×','');
+          var base2 = e2.to.replace('×','');
+          if(base1===base2 && e1.to!==e2.to && e1.solid && e2.solid){
+            issues.push('모순: "' + from + '"이(가) "' + e1.to + '"와(과) "' + e2.to + '"로 동시에 연결되어 서로 모순됩니다.');
+          }
+        }
+      }
+    });
+
+    // 2) cycle detection (directed, ignoring solid/dashed)
+    var visited = {}, onStack = {};
+    var reportedCycles = new Set();
+    function dfs(node, path){
+      visited[node]=true; onStack[node]=true; path.push(node);
+      (adj[node]||[]).forEach(function(e){
+        if(!visited[e.to]){
+          dfs(e.to, path.slice());
+        } else if(onStack[e.to]){
+          var start = path.indexOf(e.to);
+          var cyclePath = path.slice(start).concat(e.to);
+          var key = cyclePath.slice().sort().join('>');
+          if(!reportedCycles.has(key)){
+            reportedCycles.add(key);
+            issues.push('순환 논리: ' + cyclePath.join(' → ') + ' 로 다시 되돌아오는 고리가 있습니다.');
+          }
+        }
+      });
+      onStack[node]=false;
+    }
+    Object.keys(adj).forEach(function(n){ if(!visited[n]) dfs(n, []); });
+
+    // 3) connected components (undirected) among words that appear in statements
+    var uadj = {};
+    statements.forEach(function(e){
+      uadj[e.from] = uadj[e.from] || new Set();
+      uadj[e.to]   = uadj[e.to]   || new Set();
+      uadj[e.from].add(e.to);
+      uadj[e.to].add(e.from);
+    });
+    var seen = {}, components = [];
+    Object.keys(uadj).forEach(function(n){
+      if(seen[n]) return;
+      var comp=[], queue=[n]; seen[n]=true;
+      while(queue.length){
+        var cur = queue.shift();
+        comp.push(cur);
+        uadj[cur].forEach(function(nb){ if(!seen[nb]){ seen[nb]=true; queue.push(nb); } });
+      }
+      components.push(comp);
+    });
+    if(components.length > 1){
+      issues.push('단절된 논증: 문장들이 하나로 이어지지 않고 ' + components.length + '개의 독립된 그룹으로 나뉩니다 → ' +
+        components.map(function(c){ return '[' + c.join(', ') + ']'; }).join('  '));
+    }
+
+    // 4) chain of two particular ("어떤") premises in a row — no guaranteed conclusion
+    var warnedPairs = new Set();
+    statements.forEach(function(e1){
+      if(e1.solid) return;
+      (adj[e1.to]||[]).forEach(function(e2){
+        if(e2.solid) return;
+        var key = e1.from+'|'+e1.to+'|'+e2.to;
+        if(warnedPairs.has(key)) return;
+        warnedPairs.add(key);
+        issues.push('불확실한 연결: "' + e1.from + '" → "' + e1.to + '" → "' + e2.to +
+          '" 구간이 모두 \'어떤(일부)\' 전제로만 이어져 있어 확실한 결론을 보장하지 않습니다.');
+      });
+    });
+
+    if(issues.length === 0){
+      issues.push('발견된 논리적 결함이 없습니다. 제시된 문장들은 하나의 일관된 사슬로 연결됩니다.');
+    }
+    return issues;
+  }
+
+  function renderEvalList(issues){
+    var ul = document.getElementById('evalList');
+    ul.innerHTML = '';
+    issues.forEach(function(msg){
+      var li = document.createElement('li');
+      li.textContent = msg;
+      if(msg.indexOf('발견된 논리적 결함이 없습니다') === 0) li.className = 'ok';
+      ul.appendChild(li);
+    });
+  }
+
+  // ---------------------------------------------------------------
+  // Network rendering (graph = floating physics / diagram = hierarchical)
+  // ---------------------------------------------------------------
+  var network = null;
+  var currentData = null;
+  var isDiagram = false;
+
+  var graphOptions = {
+    nodes:{ shape:'ellipse', font:{ face:'IBM Plex Mono', size:16 }, borderWidth:2 },
+    edges:{ arrows:{ to:{ enabled:true, scaleFactor:0.7 } }, smooth:{ type:'continuous' } },
+    physics:{
+      enabled:true,
+      solver:'forceAtlas2Based',
+      forceAtlas2Based:{ gravitationalConstant:-70, springLength:130, springConstant:0.06, avoidOverlap:0.6 },
+      stabilization:{ iterations:180 }
+    },
+    interaction:{ dragNodes:true, dragView:true, zoomView:true, hover:true }
+  };
+
+  var diagramOptions = {
+    nodes:{ shape:'box', shapeProperties:{ borderRadius:6 }, font:{ face:'IBM Plex Mono', size:15 }, borderWidth:2, margin:10 },
+    edges:{ arrows:{ to:{ enabled:true, scaleFactor:0.7 } }, smooth:{ type:'cubicBezier', forceDirection:'horizontal', roundness:0.5 } },
+    layout:{ hierarchical:{ enabled:true, direction:'LR', sortMethod:'directed', nodeSpacing:130, levelSeparation:170 } },
+    physics:{ enabled:false },
+    interaction:{ dragNodes:true, dragView:true, zoomView:true, hover:true }
+  };
+
+  function renderNetwork(diagram){
+    var container = document.getElementById('network');
+    if(network){ network.destroy(); network = null; }
+    var options = diagram ? diagramOptions : graphOptions;
+    network = new vis.Network(container, { nodes:new vis.DataSet(currentData.nodes), edges:new vis.DataSet(currentData.edges) }, options);
+    document.getElementById('dragHint').style.display = 'block';
+  }
+
+  // ---------------------------------------------------------------
+  // View switching
+  // ---------------------------------------------------------------
+  var inputView = document.getElementById('inputView');
+  var resultView = document.getElementById('resultView');
+
+  document.getElementById('doneBtn').addEventListener('click', function(){
+    var statements = collectStatements();
+    if(statements.length === 0){
+      alert('최소 한 문장 이상 단어를 입력해주세요.');
+      return;
+    }
+    currentData = buildGraphData(statements);
+    isDiagram = false;
+
+    inputView.classList.add('hidden');
+    resultView.classList.remove('hidden');
+    document.getElementById('viewTitle').textContent = '논리 그래프';
+    document.getElementById('toggleBtn').textContent = '다이어그램으로 보기';
+
+    renderNetwork(false);
+    renderEvalList(evaluateLogic(statements));
+
+    resultView.__statements = statements;
+  });
+
+  document.getElementById('toggleBtn').addEventListener('click', function(){
+    isDiagram = !isDiagram;
+    renderNetwork(isDiagram);
+    document.getElementById('viewTitle').textContent = isDiagram ? '논리 다이어그램' : '논리 그래프';
+    document.getElementById('toggleBtn').textContent = isDiagram ? '그래프로 보기' : '다이어그램으로 보기';
+  });
+
+  document.getElementById('backBtn').addEventListener('click', function(){
+    resultView.classList.add('hidden');
+    inputView.classList.remove('hidden');
+  });
+
+  document.getElementById('saveImgBtn').addEventListener('click', function(){
+    if(!network) return;
+    try{
+      var canvas = network.canvas.frame.canvas;
+      var url = canvas.toDataURL('image/png');
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = (isDiagram ? '삼단논법_다이어그램' : '삼단논법_그래프') + '.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }catch(err){
+      alert('이미지 저장에 실패했습니다: ' + err.message);
+    }
+  });
+
+})();
+</script>
+</body>
+</html>
