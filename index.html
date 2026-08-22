@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>삼단논법 게시판</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -38,255 +38,108 @@
     color:var(--chalk);
     font-family:'IBM Plex Sans KR', -apple-system, sans-serif;
     min-height:100vh;
-    padding:32px 16px 64px;
+    padding:28px 12px 64px;
   }
 
-  .board{
-    max-width:760px;
-    margin:0 auto;
-  }
+  .board{ max-width:820px; margin:0 auto; }
 
-  header{ margin-bottom:32px; }
-  .eyebrow{
-    font-family:'IBM Plex Mono', monospace;
-    letter-spacing:0.14em;
-    font-size:12px;
-    color:var(--accent);
-    margin:0 0 10px;
-    text-transform:uppercase;
-  }
-  h1{
-    font-family:'Space Grotesk', sans-serif;
-    font-weight:700;
-    font-size:clamp(26px,5vw,36px);
-    margin:0 0 8px;
-    letter-spacing:-0.01em;
-  }
-  .sub{
-    color:var(--chalk-dim);
-    font-size:14px;
-    margin:0;
-    line-height:1.6;
-  }
-
+  header{ margin-bottom:28px; }
+  .eyebrow{ font-family:'IBM Plex Mono', monospace; letter-spacing:0.14em; font-size:12px; color:var(--accent); margin:0 0 10px; text-transform:uppercase; }
+  h1{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:clamp(24px,5.5vw,34px); margin:0 0 8px; letter-spacing:-0.01em; }
+  .sub{ color:var(--chalk-dim); font-size:13.5px; margin:0; line-height:1.6; }
   .hidden{ display:none !important; }
 
   /* ---------- input groups ---------- */
-  .group{
-    background:var(--panel);
-    border:1px solid var(--line);
-    border-radius:var(--radius);
-    padding:18px 16px 14px;
-    margin-bottom:16px;
-    position:relative;
-  }
-  .group-label{
-    font-family:'IBM Plex Mono', monospace;
-    font-size:11px;
-    letter-spacing:0.1em;
-    color:var(--chalk-dim);
-    text-transform:uppercase;
-    margin-bottom:12px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-  }
-  .group-remove{
-    background:none;
-    border:none;
-    color:var(--danger);
-    font-family:'IBM Plex Mono', monospace;
-    font-size:11px;
-    cursor:pointer;
-    opacity:0.7;
-    letter-spacing:0.05em;
-  }
+  .group{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:14px 10px 10px; margin-bottom:14px; position:relative; }
+  .group-label{ font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:0.08em; color:var(--chalk-dim); text-transform:uppercase; margin-bottom:10px; padding:0 4px; display:flex; align-items:center; justify-content:space-between; }
+  .group-remove{ background:none; border:none; color:var(--danger); font-family:'IBM Plex Mono', monospace; font-size:11px; cursor:pointer; opacity:0.7; letter-spacing:0.05em; }
   .group-remove:hover{ opacity:1; text-decoration:underline; }
 
-  .row{
-    display:grid;
-    grid-template-columns: 62px minmax(0,1fr) 90px minmax(0,1fr) 96px;
-    gap:6px;
-    align-items:center;
-    padding:9px 0;
-    border-bottom:1px dashed var(--line);
-  }
+  .row{ display:flex; flex-wrap:nowrap; align-items:center; gap:3px; padding:7px 2px; border-bottom:1px dashed var(--line); }
   .row:last-child{ border-bottom:none; }
+  .row > *{ flex-shrink:1; min-width:0; }
 
-  .badge{
-    width:22px; height:22px;
-    border:1px solid var(--accent-dim);
-    border-radius:50%;
-    display:inline-flex; align-items:center; justify-content:center;
-    font-family:'IBM Plex Mono', monospace;
-    font-size:11px;
-    color:var(--accent);
-    flex:0 0 auto;
-  }
-  .word-cell{ display:flex; align-items:center; gap:6px; min-width:0; }
+  .badge{ flex:0 0 auto; width:18px; height:18px; border:1px solid var(--accent-dim); border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--accent); }
 
-  select, input[type="text"]{
-    background:transparent;
-    border:none;
-    border-bottom:1px solid var(--line);
-    color:var(--chalk);
-    font-family:'IBM Plex Sans KR', sans-serif;
-    font-size:14px;
-    padding:6px 2px;
-    width:100%;
-    min-width:0;
-    outline:none;
-    border-radius:0;
-    appearance:none;
-    -webkit-appearance:none;
-  }
-  input[type="text"]{
-    border-bottom:1px dashed var(--line);
-  }
-  input[type="text"]::placeholder{ color:rgba(169,182,180,0.5); }
-  input[type="text"]:focus, select:focus{
-    border-bottom-color:var(--accent);
-  }
+  select, input[type="text"]{ background:transparent; border:none; color:var(--chalk); font-family:'IBM Plex Sans KR', sans-serif; outline:none; border-radius:0; appearance:none; -webkit-appearance:none; min-width:0; }
+  input[type="text"]{ border-bottom:1px dashed var(--line); padding:5px 2px; font-size:12.5px; flex:1 1 32px; width:16px; }
+  input[type="text"]::placeholder{ color:rgba(169,182,180,0.45); }
+  input[type="text"]:focus, select:focus{ border-bottom-color:var(--accent); }
+
   select{
+    border-bottom:1px solid var(--line);
     background-image: linear-gradient(45deg, transparent 50%, var(--chalk-dim) 50%), linear-gradient(135deg, var(--chalk-dim) 50%, transparent 50%);
-    background-position: calc(100% - 10px) 55%, calc(100% - 5px) 55%;
-    background-size: 5px 5px, 5px 5px;
+    background-position: calc(100% - 8px) 55%, calc(100% - 4px) 55%;
+    background-size: 4px 4px, 4px 4px;
     background-repeat:no-repeat;
-    padding-right:16px;
-    font-size:13px;
-    color:var(--chalk-dim);
-    cursor:pointer;
+    padding:5px 14px 5px 3px;
+    font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    cursor:pointer; color:var(--chalk-dim);
   }
-  select.quant{ color:var(--blue); font-weight:500; }
-  select.copula{ color:var(--accent); font-weight:500; }
+  select.quant{ flex:0 1 46px; width:46px; color:var(--blue); font-weight:500; }
+  select.particle{ flex:0 1 58px; width:58px; }
+  select.copula{ flex:0 1 52px; width:52px; color:var(--accent); font-weight:500; }
   option{ background:var(--panel-2); color:var(--chalk); }
 
+  @media (max-width:380px){
+    .badge{ width:15px; height:15px; font-size:8.5px; }
+    select.quant{ flex-basis:38px; width:38px; font-size:10px; padding-right:11px; }
+    select.particle{ flex-basis:46px; width:46px; font-size:9px; padding-right:11px; }
+    select.copula{ flex-basis:42px; width:42px; font-size:9px; padding-right:11px; }
+    input[type="text"]{ font-size:11px; }
+    .row{ gap:2px; }
+  }
+
   /* ---------- buttons ---------- */
-  .actions{
-    display:flex;
-    gap:10px;
-    margin-top:20px;
-    flex-wrap:wrap;
-  }
-  .btn{
-    font-family:'IBM Plex Mono', monospace;
-    font-size:13px;
-    letter-spacing:0.03em;
-    padding:12px 20px;
-    border-radius:8px;
-    border:1px solid var(--line);
-    background:transparent;
-    color:var(--chalk);
-    cursor:pointer;
-    transition: border-color .15s ease, background .15s ease, color .15s ease;
-    flex:1 1 auto;
-    text-align:center;
-  }
+  .actions{ display:flex; gap:10px; margin-top:18px; flex-wrap:wrap; }
+  .btn{ font-family:'IBM Plex Mono', monospace; font-size:13px; letter-spacing:0.03em; padding:12px 18px; border-radius:8px; border:1px solid var(--line); background:transparent; color:var(--chalk); cursor:pointer; transition: border-color .15s ease, background .15s ease, color .15s ease; flex:1 1 auto; text-align:center; }
   .btn:hover{ border-color:var(--chalk-dim); }
   .btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
-  .btn-primary{
-    background:var(--accent);
-    color:#1b1503;
-    border-color:var(--accent);
-    font-weight:600;
-    flex:2 1 auto;
-  }
+  .btn-primary{ background:var(--accent); color:#1b1503; border-color:var(--accent); font-weight:600; flex:2 1 auto; }
   .btn-primary:hover{ background:#f0cf7c; }
   .btn-ghost{ color:var(--chalk-dim); }
-  .btn-secondary{
-    border-color:var(--blue);
-    color:var(--blue);
-  }
+  .btn-secondary{ border-color:var(--blue); color:var(--blue); }
   .btn-secondary:hover{ background:rgba(127,179,213,0.08); }
-  .btn.small{ padding:8px 14px; font-size:12px; flex:0 0 auto; }
+  .btn.small{ padding:8px 12px; font-size:11.5px; flex:0 0 auto; }
 
   /* ---------- result view ---------- */
-  .result-card, .eval-card{
-    background:var(--panel);
-    border:1px solid var(--line);
-    border-radius:var(--radius);
-    padding:18px 16px;
-    margin-bottom:16px;
-  }
-  .result-head{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    margin-bottom:12px;
-    gap:10px;
-    flex-wrap:wrap;
-  }
-  .result-head h2, .eval-card h3{
-    font-family:'Space Grotesk', sans-serif;
-    font-size:17px;
-    margin:0;
-    font-weight:700;
-  }
+  .result-card, .eval-card{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 12px; margin-bottom:14px; }
+  .result-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; gap:10px; flex-wrap:wrap; }
+  .result-head h2, .eval-card h3{ font-family:'Space Grotesk', sans-serif; font-size:16px; margin:0; font-weight:700; }
   #network{
-    height:460px;
-    width:100%;
+    height:440px; width:100%;
     background:
       linear-gradient(var(--line) 1px, transparent 1px) 0 0/28px 28px,
       linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0/28px 28px,
       var(--panel-2);
-    border-radius:8px;
-    border:1px solid var(--line);
+    border-radius:8px; border:1px solid var(--line);
     overflow:hidden;
+    position:relative;
   }
-  .hint{
-    font-size:12px;
-    color:var(--chalk-dim);
-    margin:10px 2px 0;
-  }
+  #network.diagram-mode{ cursor:grab; touch-action:none; }
+  #network.diagram-mode:active{ cursor:grabbing; }
+  #network svg{ display:block; width:100%; height:100%; }
+  .diagram-shape{ cursor:grab; }
+  .diagram-shape:active{ cursor:grabbing; }
+  .hint{ font-size:11.5px; color:var(--chalk-dim); margin:9px 2px 0; line-height:1.6; }
 
-  .eval-card ul{
-    list-style:none;
-    margin:0; padding:0;
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-  }
-  .eval-card li{
-    font-size:13.5px;
-    line-height:1.55;
-    padding:10px 12px;
-    border-radius:6px;
-    border-left:3px solid var(--danger);
-    background:rgba(224,133,133,0.08);
-    color:var(--chalk);
-  }
-  .eval-card li.ok{
-    border-left-color:var(--ok);
-    background:rgba(143,203,155,0.08);
-  }
-
-  .legend{
-    display:flex;
-    gap:16px;
-    flex-wrap:wrap;
-    font-size:11.5px;
-    color:var(--chalk-dim);
-    margin-top:12px;
-    font-family:'IBM Plex Mono', monospace;
-  }
+  .legend{ display:flex; gap:14px; flex-wrap:wrap; font-size:11px; color:var(--chalk-dim); margin-top:11px; font-family:'IBM Plex Mono', monospace; align-items:center; }
   .legend span{ display:inline-flex; align-items:center; gap:6px; }
-  .legend i{ width:16px; height:0; border-top:2px solid var(--blue); display:inline-block; }
+  .legend i{ width:15px; height:0; border-top:2px solid var(--blue); display:inline-block; }
   .legend i.dash{ border-top:2px dashed var(--pink); }
   .legend b{ color:var(--danger); font-style:normal; }
+  .legend svg{ display:block; }
 
-  @media (max-width:520px){
-    .row{
-      grid-template-columns: 22px 1fr 1fr;
-      grid-template-areas:
-        "b1 quant quant"
-        "b1 wl wl"
-        "b2 particle particle"
-        "b2 wr wr"
-        ". copula copula";
-      row-gap:4px;
-      padding:12px 0;
-    }
-  }
+  .eval-card ul{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+  .eval-card li{ font-size:13px; line-height:1.55; padding:10px 11px; border-radius:6px; border-left:3px solid var(--danger); background:rgba(224,133,133,0.08); color:var(--chalk); }
+  .eval-card li.ok{ border-left-color:var(--ok); background:rgba(143,203,155,0.08); }
+  .eval-card li.info{ border-left-color:var(--blue); background:rgba(127,179,213,0.08); }
+
+  .zoom-controls{ position:absolute; right:8px; bottom:8px; display:flex; flex-direction:column; gap:4px; z-index:5; }
+  .zoom-controls button{ width:28px; height:28px; border-radius:6px; border:1px solid var(--line); background:rgba(27,35,37,0.85); color:var(--chalk); font-family:'IBM Plex Mono',monospace; font-size:15px; cursor:pointer; line-height:1; }
+  .zoom-controls button:hover{ border-color:var(--chalk-dim); }
+
+  @media (max-width:520px){ #network{ height:380px; } }
 </style>
 </head>
 <body>
@@ -296,13 +149,12 @@
   <header>
     <p class="eyebrow">Syllogism Board · 三段論法</p>
     <h1>삼단논법 게시판</h1>
-    <p class="sub">문장을 입력하면 단어 사이의 관계를 그래프와 다이어그램으로 그려주고, 논리적 결함을 점검해드립니다.</p>
+    <p class="sub">문장을 입력하면 그래프와 원·부채꼴 다이어그램으로 그려주고, 9가지 표준 삼단논법 형식에 맞는지 판정합니다.</p>
   </header>
 
   <!-- ============ INPUT VIEW ============ -->
   <main id="inputView">
     <div id="groups"></div>
-
     <div class="actions">
       <button id="addBtn" class="btn btn-ghost">+ 추가</button>
       <button id="doneBtn" class="btn btn-primary">완료</button>
@@ -318,12 +170,8 @@
         <button id="saveImgBtn" class="btn btn-ghost small">이미지로 저장</button>
       </div>
       <div id="network"></div>
-      <p class="hint" id="dragHint">노드를 드래그해서 위치를 자유롭게 옮길 수 있습니다.</p>
-      <div class="legend">
-        <span><i></i> 모든 (전칭)</span>
-        <span><i class="dash"></i> 어떤 (특칭)</span>
-        <span><b>×</b> 부정(아니다)</span>
-      </div>
+      <p class="hint" id="dragHint"></p>
+      <div class="legend" id="legendBox"></div>
     </div>
 
     <div class="eval-card">
@@ -357,12 +205,12 @@
   function rowHTML(){
     return (
       '<div class="row">' +
-        '<div class="word-cell"><span class="badge js-badge-l"></span>' +
-          '<select class="quant"><option value="모든">모든</option><option value="어떤">어떤</option></select>' +
-        '</div>' +
-        '<input type="text" class="wordLeft" placeholder="단어 입력">' +
+        '<span class="badge js-badge-l"></span>' +
+        '<select class="quant"><option value="모든">모든</option><option value="어떤">어떤</option></select>' +
+        '<input type="text" class="wordLeft" placeholder="단어">' +
         '<select class="particle">' + optionsHTML(PARTICLE_OPTS) + '</select>' +
-        '<div class="word-cell"><input type="text" class="wordRight" placeholder="단어 입력"><span class="badge js-badge-r"></span></div>' +
+        '<input type="text" class="wordRight" placeholder="단어">' +
+        '<span class="badge js-badge-r"></span>' +
         '<select class="copula">' + optionsHTML(COPULA_OPTS) + '</select>' +
       '</div>'
     );
@@ -392,41 +240,56 @@
   window.__renumber = renumberBadges;
 
   document.getElementById('addBtn').addEventListener('click', addGroup);
-  addGroup(); // start with one set of 3 rows
+  addGroup();
 
   // ---------------------------------------------------------------
-  // Collect statements from the form
+  // Raw statement extraction
   // ---------------------------------------------------------------
-  function collectStatements(){
-    var rows = groupsEl.querySelectorAll('.row');
-    var statements = [];
-    rows.forEach(function(row){
-      var quant = row.querySelector('.quant').value;
-      var wl = row.querySelector('.wordLeft').value.trim();
-      var particle = row.querySelector('.particle').value;
-      var wr = row.querySelector('.wordRight').value.trim();
-      var copula = row.querySelector('.copula').value;
-      if(!wl || !wr) return;
-
-      var leftNeg = (particle === '이 아닌 것은' || particle === '가 아닌 것은');
-      var rightNeg = (copula === '가 아니다' || copula === '이 아니다');
-
-      statements.push({
-        from: wl + (leftNeg ? '×' : ''),
-        to:   wr + (rightNeg ? '×' : ''),
-        solid: (quant === '모든')
-      });
-    });
-    return statements;
+  function rowToRaw(row){
+    var quant = row.querySelector('.quant').value;
+    var subj = row.querySelector('.wordLeft').value.trim();
+    var particle = row.querySelector('.particle').value;
+    var pred = row.querySelector('.wordRight').value.trim();
+    var copula = row.querySelector('.copula').value;
+    var subjNeg = (particle === '이 아닌 것은' || particle === '가 아닌 것은');
+    var predNeg = (copula === '가 아니다' || copula === '이 아니다');
+    return { quant:quant, subj:subj, subjNeg:subjNeg, pred:pred, predNeg:predNeg };
   }
 
+  function collectFlatRaw(){
+    var rows = groupsEl.querySelectorAll('.row');
+    var list = [];
+    rows.forEach(function(row){
+      var r = rowToRaw(row);
+      if(r.subj && r.pred) list.push(r);
+    });
+    return list;
+  }
+
+  function collectGroupedRaw(){
+    var groupEls = groupsEl.querySelectorAll('.group');
+    var groups = [];
+    groupEls.forEach(function(gEl, idx){
+      var rowEls = gEl.querySelectorAll('.row');
+      var rows = [];
+      rowEls.forEach(function(row){ rows.push(rowToRaw(row)); });
+      var complete = rows.length === 3 && rows.every(function(r){ return r.subj && r.pred; });
+      groups.push({ index: idx+1, rows: rows, complete: complete });
+    });
+    return groups;
+  }
+
+  function labelOf(word, neg){ return word + (neg ? '×' : ''); }
+
   // ---------------------------------------------------------------
-  // Build graph data (nodes / edges) from statements
+  // GRAPH data (floating network) — built per group so we can also
+  // identify "middle node" / "conclusion edge" triples for the
+  // double-click show/hide behaviour.
   // ---------------------------------------------------------------
-  function buildGraphData(statements){
+  function buildGraphAndTriples(groupedRaw){
     var nodeMap = new Map();
-    var nodes = [];
-    var edges = [];
+    var nodes = [], edges = [], triples = [];
+    var edgeCounter = 0;
 
     function styleFor(label){
       var negated = label.indexOf('×') !== -1;
@@ -435,211 +298,628 @@
       }
       return { color:{ background:'#e8c468', border:'#b98f3a', highlight:{background:'#f0d484', border:'#b98f3a'} }, font:{ color:'#14181a' } };
     }
-
     function getId(label){
       if(!nodeMap.has(label)){
         var id = nodeMap.size + 1;
         var style = styleFor(label);
         nodeMap.set(label, id);
-        nodes.push(Object.assign({ id:id, label:label, shape:'ellipse',
+        nodes.push({ id:id, label:label, shape:'ellipse',
           font:Object.assign({face:'IBM Plex Mono', size:16}, style.font),
-          borderWidth:2, margin:10 }, { color: style.color }));
+          borderWidth:2, margin:10, color: style.color });
       }
       return nodeMap.get(label);
     }
 
-    statements.forEach(function(s){
-      var fromId = getId(s.from);
-      var toId = getId(s.to);
-      edges.push({
-        from: fromId, to: toId,
-        dashes: !s.solid,
-        arrows: 'to',
-        color: { color: s.solid ? '#7fb3d5' : '#e2a6c5', highlight: s.solid ? '#7fb3d5' : '#e2a6c5' },
-        width: 2,
-        smooth: { type:'continuous' }
+    groupedRaw.forEach(function(group){
+      var rowEdgeInfo = [];
+      group.rows.forEach(function(r){
+        if(!r.subj || !r.pred) return;
+        var fromLabel = labelOf(r.subj, r.subjNeg), toLabel = labelOf(r.pred, r.predNeg);
+        var fromId = getId(fromLabel), toId = getId(toLabel);
+        var solid = (r.quant === '모든');
+        var eid = 'e' + (edgeCounter++);
+        edges.push({ id:eid, from:fromId, to:toId, dashes: !solid, arrows:'to',
+          color:{ color: solid ? '#7fb3d5' : '#e2a6c5', highlight: solid ? '#7fb3d5' : '#e2a6c5' },
+          width:2, smooth:{ type:'continuous' } });
+        rowEdgeInfo.push({ eid:eid, fromLabel:fromLabel, toLabel:toLabel });
       });
+      if(rowEdgeInfo.length === 3){
+        var e1 = rowEdgeInfo[0], e2 = rowEdgeInfo[1], e3 = rowEdgeInfo[2];
+        var set1 = [e1.fromLabel, e1.toLabel], set2 = [e2.fromLabel, e2.toLabel];
+        var middleLabel = null;
+        set1.forEach(function(l){ if(set2.indexOf(l) !== -1) middleLabel = l; });
+        if(middleLabel){
+          triples.push({
+            middleNodeId: nodeMap.get(middleLabel),
+            premiseEdgeIds: [e1.eid, e2.eid],
+            conclusionEdgeId: e3.eid,
+            midHidden:false, conclHidden:false
+          });
+        }
+      }
     });
 
-    return { nodes:nodes, edges:edges, nodeMap:nodeMap };
+    return { nodes:nodes, edges:edges, triples:triples };
   }
 
   // ---------------------------------------------------------------
-  // Logic evaluation heuristics
+  // 9 valid categorical syllogism templates
+  // t: A(모든~이다) / E(모든~아니다) / I(어떤~이다) / O(어떤~아니다)
   // ---------------------------------------------------------------
-  function evaluateLogic(statements){
+  var TEMPLATES = [
+    {id:1, s1:{t:'A',s:'M',p:'P'}, s2:{t:'A',s:'S',p:'M'}, c:{t:'A',s:'S',p:'P'}, desc:'모든 M은 P이다 · 모든 S는 M이다 → 모든 S는 P이다'},
+    {id:2, s1:{t:'A',s:'M',p:'P'}, s2:{t:'A',s:'M',p:'S'}, c:{t:'I',s:'S',p:'P'}, desc:'모든 M은 P이다 · 모든 M은 S이다 → 어떤 S는 P이다'},
+    {id:3, s1:{t:'A',s:'P',p:'M'}, s2:{t:'A',s:'M',p:'S'}, c:{t:'I',s:'S',p:'P'}, desc:'모든 P는 M이다 · 모든 M은 S이다 → 어떤 S는 P이다'},
+    {id:4, s1:{t:'E',s:'M',p:'P'}, s2:{t:'A',s:'S',p:'M'}, c:{t:'E',s:'S',p:'P'}, desc:'모든 M은 P가 아니다 · 모든 S는 M이다 → 모든 S는 P가 아니다'},
+    {id:5, s1:{t:'E',s:'M',p:'P'}, s2:{t:'A',s:'M',p:'S'}, c:{t:'O',s:'S',p:'P'}, desc:'모든 M은 P가 아니다 · 모든 M은 S이다 → 어떤 S는 P가 아니다'},
+    {id:6, s1:{t:'A',s:'M',p:'P'}, s2:{t:'I',s:'S',p:'M'}, c:{t:'I',s:'S',p:'P'}, desc:'모든 M은 P이다 · 어떤 S는 M이다 → 어떤 S는 P이다'},
+    {id:7, s1:{t:'E',s:'M',p:'P'}, s2:{t:'I',s:'S',p:'M'}, c:{t:'O',s:'S',p:'P'}, desc:'모든 M은 P가 아니다 · 어떤 S는 M이다 → 어떤 S는 P가 아니다'},
+    {id:8, s1:{t:'A',s:'P',p:'M'}, s2:{t:'O',s:'S',p:'M'}, c:{t:'O',s:'S',p:'P'}, desc:'모든 P는 M이다 · 어떤 S는 M이 아니다 → 어떤 S는 P가 아니다'},
+    {id:9, s1:{t:'O',s:'M',p:'P'}, s2:{t:'A',s:'M',p:'S'}, c:{t:'O',s:'S',p:'P'}, desc:'어떤 M은 P가 아니다 · 모든 M은 S이다 → 어떤 S는 P가 아니다'}
+  ];
+
+  var SHAPES_TABLE = {
+    1:{M:'circle',S:'circle',P:'fan'},
+    2:{M:'circle',S:'fan',P:'fan'},
+    3:{M:'circle',S:'fan',P:'circle'},
+    4:{M:'circle',S:'circle',P:'fan'},
+    5:{M:'circle',S:'fan',P:'fan'},
+    6:{M:'circle',S:'fan',P:'fan'},
+    7:{M:'circle',S:'fan',P:'fan'},
+    8:{M:'fan',S:'fan',P:'circle'},
+    9:{M:'circle',S:'fan',P:'fan'}
+  };
+  var LAYOUT_TABLE = {
+    1:{type:'chain', order:['P','M','S'], negRole:null},
+    2:{type:'chain', order:['P','S','M'], negRole:null},
+    3:{type:'chain', order:['S','M','P'], negRole:null},
+    4:{type:'chain', order:['P','M','S'], negRole:'P'},
+    5:{type:'chain', order:['P','S','M'], negRole:'P'},
+    6:{type:'chain', order:['P','M','S'], negRole:null},
+    7:{type:'chain', order:['P','M','S'], negRole:'P'},
+    8:{type:'split', clusters:[['M','P'],['M','S']], negCluster:1, negRole:'M'},
+    9:{type:'chain', order:['P','S','M'], negRole:'P'}
+  };
+
+  function typeOf(r){ return r.quant === '모든' ? (r.predNeg ? 'E' : 'A') : (r.predNeg ? 'O' : 'I'); }
+
+  function matchGroup(rows){
+    if(rows.length !== 3) return null;
+    if(rows.some(function(r){ return r.subjNeg; })) return null;
+    var c = rows[2];
+    var premiseOrders = [[rows[0],rows[1]],[rows[1],rows[0]]];
+    for(var ti=0; ti<TEMPLATES.length; ti++){
+      var T = TEMPLATES[ti];
+      for(var oi=0; oi<premiseOrders.length; oi++){
+        var p1 = premiseOrders[oi][0], p2 = premiseOrders[oi][1];
+        var roleMap = {}, wordMap = {};
+        function assign(word, role){
+          if(!word) return false;
+          if(roleMap[word] && roleMap[word] !== role) return false;
+          if(wordMap[role] && wordMap[role] !== word) return false;
+          roleMap[word] = role; wordMap[role] = word;
+          return true;
+        }
+        var ok = typeOf(p1) === T.s1.t && assign(p1.subj, T.s1.s) && assign(p1.pred, T.s1.p);
+        if(ok) ok = typeOf(p2) === T.s2.t && assign(p2.subj, T.s2.s) && assign(p2.pred, T.s2.p);
+        if(ok) ok = typeOf(c) === T.c.t && assign(c.subj, T.c.s) && assign(c.pred, T.c.p);
+        if(ok && wordMap.M && wordMap.S && wordMap.P){
+          var uniq = {}; uniq[wordMap.M]=1; uniq[wordMap.S]=1; uniq[wordMap.P]=1;
+          if(Object.keys(uniq).length === 3){
+            return { template:T, roleToWord:wordMap };
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  function evaluateGroupSyllogism(group){
+    if(!group.complete) return { status:'incomplete', groupIndex:group.index };
+    var m = matchGroup(group.rows);
+    if(!m) return { status:'invalid', groupIndex:group.index };
+    var id = m.template.id;
+    var layout = LAYOUT_TABLE[id];
+    var shapes = SHAPES_TABLE[id];
+    function itemFor(role){
+      var neg = (layout.negRole === role);
+      return { role:role, label: labelOf(m.roleToWord[role], neg), shape: shapes[role] };
+    }
+    var result = { status:'valid', groupIndex:group.index, templateId:id, templateDesc:m.template.desc, diagramType:layout.type };
+    if(layout.type === 'chain'){
+      result.items = layout.order.map(itemFor);
+    } else {
+      result.clusters = layout.clusters.map(function(rolesArr, ci){
+        return rolesArr.map(function(role){
+          var neg = (layout.negCluster === ci && layout.negRole === role);
+          return { role:role, label: labelOf(m.roleToWord[role], neg), shape: shapes[role] };
+        });
+      });
+    }
+    return result;
+  }
+
+  // ---------------------------------------------------------------
+  // Contradiction & cycle checks (global, across all filled rows)
+  // ---------------------------------------------------------------
+  function findContradictions(rawList){
     var issues = [];
-
-    // adjacency (directed)
-    var adj = {};
-    statements.forEach(function(e){
-      adj[e.from] = adj[e.from] || [];
-      adj[e.from].push(e);
+    var map = {};
+    rawList.forEach(function(r){
+      var subjLabel = labelOf(r.subj, r.subjNeg);
+      var key = subjLabel + '\u0001' + r.pred;
+      map[key] = map[key] || [];
+      map[key].push(r);
     });
-
-    // 1) direct contradiction: same source pointing to word and word× with both universal
-    var fromMap = {};
-    statements.forEach(function(e){
-      fromMap[e.from] = fromMap[e.from] || [];
-      fromMap[e.from].push(e);
-    });
-    Object.keys(fromMap).forEach(function(from){
-      var list = fromMap[from];
-      for(var i=0;i<list.length;i++){
-        for(var j=i+1;j<list.length;j++){
-          var e1=list[i], e2=list[j];
-          var base1 = e1.to.replace('×','');
-          var base2 = e2.to.replace('×','');
-          if(base1===base2 && e1.to!==e2.to && e1.solid && e2.solid){
-            issues.push('모순: "' + from + '"이(가) "' + e1.to + '"와(과) "' + e2.to + '"로 동시에 연결되어 서로 모순됩니다.');
-          }
-        }
-      }
-    });
-
-    // 2) cycle detection (directed, ignoring solid/dashed)
-    var visited = {}, onStack = {};
-    var reportedCycles = new Set();
-    function dfs(node, path){
-      visited[node]=true; onStack[node]=true; path.push(node);
-      (adj[node]||[]).forEach(function(e){
-        if(!visited[e.to]){
-          dfs(e.to, path.slice());
-        } else if(onStack[e.to]){
-          var start = path.indexOf(e.to);
-          var cyclePath = path.slice(start).concat(e.to);
-          var key = cyclePath.slice().sort().join('>');
-          if(!reportedCycles.has(key)){
-            reportedCycles.add(key);
-            issues.push('순환 논리: ' + cyclePath.join(' → ') + ' 로 다시 되돌아오는 고리가 있습니다.');
-          }
-        }
+    Object.keys(map).forEach(function(key){
+      var list = map[key];
+      var hasA=false, hasE=false, hasI=false, hasO=false;
+      list.forEach(function(r){
+        var all = (r.quant === '모든');
+        if(all && !r.predNeg) hasA = true;
+        if(all && r.predNeg) hasE = true;
+        if(!all && !r.predNeg) hasI = true;
+        if(!all && r.predNeg) hasO = true;
       });
-      onStack[node]=false;
-    }
-    Object.keys(adj).forEach(function(n){ if(!visited[n]) dfs(n, []); });
-
-    // 3) connected components (undirected) among words that appear in statements
-    var uadj = {};
-    statements.forEach(function(e){
-      uadj[e.from] = uadj[e.from] || new Set();
-      uadj[e.to]   = uadj[e.to]   || new Set();
-      uadj[e.from].add(e.to);
-      uadj[e.to].add(e.from);
+      var parts = key.split('\u0001');
+      var subjLabel = parts[0], predBase = parts[1];
+      if(hasA && hasO){ issues.push('모순: "모든 ' + subjLabel + '는 ' + predBase + '이다"와 "어떤 ' + subjLabel + '는 ' + predBase + '가 아니다"가 함께 성립할 수 없습니다.'); }
+      if(hasE && hasI){ issues.push('모순: "모든 ' + subjLabel + '는 ' + predBase + '가 아니다"와 "어떤 ' + subjLabel + '는 ' + predBase + '이다"가 함께 성립할 수 없습니다.'); }
     });
-    var seen = {}, components = [];
-    Object.keys(uadj).forEach(function(n){
-      if(seen[n]) return;
-      var comp=[], queue=[n]; seen[n]=true;
-      while(queue.length){
-        var cur = queue.shift();
-        comp.push(cur);
-        uadj[cur].forEach(function(nb){ if(!seen[nb]){ seen[nb]=true; queue.push(nb); } });
-      }
-      components.push(comp);
-    });
-    if(components.length > 1){
-      issues.push('단절된 논증: 문장들이 하나로 이어지지 않고 ' + components.length + '개의 독립된 그룹으로 나뉩니다 → ' +
-        components.map(function(c){ return '[' + c.join(', ') + ']'; }).join('  '));
-    }
-
-    // 4) chain of two particular ("어떤") premises in a row — no guaranteed conclusion
-    var warnedPairs = new Set();
-    statements.forEach(function(e1){
-      if(e1.solid) return;
-      (adj[e1.to]||[]).forEach(function(e2){
-        if(e2.solid) return;
-        var key = e1.from+'|'+e1.to+'|'+e2.to;
-        if(warnedPairs.has(key)) return;
-        warnedPairs.add(key);
-        issues.push('불확실한 연결: "' + e1.from + '" → "' + e1.to + '" → "' + e2.to +
-          '" 구간이 모두 \'어떤(일부)\' 전제로만 이어져 있어 확실한 결론을 보장하지 않습니다.');
-      });
-    });
-
-    if(issues.length === 0){
-      issues.push('발견된 논리적 결함이 없습니다. 제시된 문장들은 하나의 일관된 사슬로 연결됩니다.');
-    }
     return issues;
   }
 
-  function renderEvalList(issues){
+  function findCycles(rawList){
+    var adj = {};
+    rawList.forEach(function(r){
+      var from = labelOf(r.subj, r.subjNeg), to = labelOf(r.pred, r.predNeg);
+      adj[from] = adj[from] || [];
+      adj[from].push(to);
+    });
+    var issues = [];
+    var visited = {}, onStack = {}, reported = {};
+    function dfs(node, path){
+      visited[node] = true; onStack[node] = true; path.push(node);
+      (adj[node] || []).forEach(function(next){
+        if(!visited[next]){ dfs(next, path.slice()); }
+        else if(onStack[next]){
+          var start = path.indexOf(next);
+          var cyclePath = path.slice(start).concat(next);
+          var key = cyclePath.slice().sort().join('>');
+          if(!reported[key]){ reported[key] = true; issues.push('순환 논리: ' + cyclePath.join(' → ') + ' 로 되돌아오는 고리가 있습니다.'); }
+        }
+      });
+      onStack[node] = false;
+    }
+    Object.keys(adj).forEach(function(n){ if(!visited[n]) dfs(n, []); });
+    return issues;
+  }
+
+  function renderEvalList(groupResults, contradictions, cycles){
     var ul = document.getElementById('evalList');
     ul.innerHTML = '';
-    issues.forEach(function(msg){
+    function addLi(text, cls){
       var li = document.createElement('li');
-      li.textContent = msg;
-      if(msg.indexOf('발견된 논리적 결함이 없습니다') === 0) li.className = 'ok';
+      li.textContent = text;
+      if(cls) li.className = cls;
       ul.appendChild(li);
+    }
+    var anyProblem = false;
+    groupResults.forEach(function(g){
+      if(g.status === 'valid'){
+        addLi('세트 ' + g.groupIndex + ': 올바른 삼단논법입니다 (형식 ' + g.templateId + ' — ' + g.templateDesc + ')', 'ok');
+      } else if(g.status === 'invalid'){
+        anyProblem = true;
+        addLi('세트 ' + g.groupIndex + ': 9가지 표준 형식 중 어느 것과도 일치하지 않습니다 — 틀린 논법입니다.', null);
+      }
     });
+    contradictions.forEach(function(msg){ anyProblem = true; addLi(msg, null); });
+    cycles.forEach(function(msg){ anyProblem = true; addLi(msg, null); });
+    if(!anyProblem){ addLi('발견된 논리적 결함이 없습니다. 모든 세트가 표준 삼단논법 형식에 부합합니다.', 'ok'); }
+  }
+
+  // =================================================================
+  // DIAGRAM: real pie-slice "fan" (부채꼴) shapes, nested, draggable
+  // (constrained inside their parent), pannable & zoomable.
+  // =================================================================
+  var CELL_W = 260, CELL_H = 300;
+  var BETA = 46 * Math.PI / 180;   // fan half-angle
+  var MARGIN = 0.82;               // how much of the parent's room a child uses
+
+  function esc(s){
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // compute a child frame that sits fully inside the parent frame
+  function childFrame(parent, childType){
+    if(parent.type === 'circle'){
+      if(childType === 'circle'){
+        return { type:'circle', x:parent.x, y:parent.y, r:parent.r*MARGIN };
+      }
+      return { type:'fan', x:parent.x, y:parent.y, r:parent.r*MARGIN, beta:BETA };
+    }
+    // parent is a fan (vertex at parent.x,parent.y, opening toward +x)
+    if(childType === 'circle'){
+      var R = parent.r, beta = parent.beta;
+      var d = (R/(1+Math.sin(beta))) * MARGIN;
+      var rho = (R*Math.sin(beta)/(1+Math.sin(beta))) * MARGIN;
+      return { type:'circle', x:parent.x+d, y:parent.y, r:rho };
+    }
+    return { type:'fan', x:parent.x, y:parent.y, r:parent.r*MARGIN, beta:parent.beta*0.82 };
+  }
+
+  // build the frame tree (flat array with parent indices) for one group's diagram
+  function buildFrames(groupResult){
+    var frames = [];
+    if(groupResult.diagramType === 'chain'){
+      var items = groupResult.items;
+      var root = { type:'fan', x:64, y:150, r:78, beta:BETA, label:items[0].label, role:items[0].role, parent:-1 };
+      frames.push(root);
+      var prev = root;
+      for(var i=1;i<items.length;i++){
+        var f = childFrame(prev, items[i].shape);
+        f.label = items[i].label; f.role = items[i].role; f.parent = frames.length-1;
+        frames.push(f);
+        prev = f;
+      }
+    } else { // split (template 8)
+      var c0 = groupResult.clusters[0], c1 = groupResult.clusters[1];
+      var root0 = { type:'fan', x:46, y:160, r:46, beta:BETA, label:c0[0].label, role:c0[0].role, parent:-1 };
+      frames.push(root0);
+      var child0 = childFrame(root0, c0[1].shape);
+      child0.label = c0[1].label; child0.role = c0[1].role; child0.parent = 0;
+      frames.push(child0);
+
+      var root1 = { type:'fan', x:172, y:160, r:46, beta:BETA, label:c1[0].label, role:c1[0].role, parent:-1 };
+      frames.push(root1);
+      var child1 = childFrame(root1, c1[1].shape);
+      child1.label = c1[1].label; child1.role = c1[1].role; child1.parent = 2;
+      frames.push(child1);
+    }
+    return frames;
+  }
+
+  function fanPathD(x,y,r,beta){
+    var a1 = -beta, a2 = beta;
+    var p1 = [x + r*Math.cos(a1), y + r*Math.sin(a1)];
+    var p2 = [x + r*Math.cos(a2), y + r*Math.sin(a2)];
+    var largeArc = (2*beta > Math.PI) ? 1 : 0;
+    return 'M '+x.toFixed(1)+','+y.toFixed(1)+' L '+p1[0].toFixed(1)+','+p1[1].toFixed(1)+
+      ' A '+r.toFixed(1)+','+r.toFixed(1)+' 0 '+largeArc+' 1 '+p2[0].toFixed(1)+','+p2[1].toFixed(1)+' Z';
+  }
+
+  function frameShapeSVG(f, idx){
+    var negated = f.label.indexOf('×') !== -1;
+    var isCircle = (f.type === 'circle');
+    var stroke = negated ? '#e08585' : (isCircle ? '#e8c468' : '#7fb3d5');
+    var fill = negated ? 'rgba(224,133,133,0.16)' : (isCircle ? 'rgba(232,196,104,0.20)' : 'rgba(127,179,213,0.20)');
+    var shapeMarkup;
+    if(isCircle){
+      shapeMarkup = '<circle cx="'+f.x.toFixed(1)+'" cy="'+f.y.toFixed(1)+'" r="'+f.r.toFixed(1)+'" fill="'+fill+'" stroke="'+stroke+'" stroke-width="2"/>';
+    } else {
+      shapeMarkup = '<path d="'+fanPathD(f.x,f.y,f.r,f.beta)+'" fill="'+fill+'" stroke="'+stroke+'" stroke-width="2" stroke-linejoin="round"/>';
+    }
+    var hasChild = f.hasChild;
+    var lx, ly;
+    if(isCircle){
+      lx = f.x; ly = hasChild ? (f.y - f.r*0.6) : f.y;
+    } else {
+      lx = hasChild ? (f.x - f.r*0.28) : (f.x + f.r*0.42);
+      ly = f.y - (hasChild ? f.r*0.12 : 0);
+    }
+    var label = '<text x="'+lx.toFixed(1)+'" y="'+ly.toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" font-family="IBM Plex Mono, monospace" font-size="12.5" fill="'+(negated?'#e08585':'#f3f1e7')+'" style="pointer-events:none;">'+esc(f.label)+'</text>';
+    return '<g class="diagram-shape" data-fidx="'+idx+'">' + shapeMarkup + label + '</g>';
+  }
+
+  function renderFramesInto(gEl, frames){
+    var html = '';
+    frames.forEach(function(f, i){ f.hasChild = frames.some(function(o){ return o.parent === i; }); });
+    frames.forEach(function(f, i){ html += frameShapeSVG(f, i); });
+    gEl.innerHTML = html;
+  }
+
+  function descendantsOf(frames, idx){
+    var out = [];
+    var changed = true;
+    var inSet = {}; inSet[idx] = true;
+    while(changed){
+      changed = false;
+      frames.forEach(function(f, i){
+        if(!inSet[i] && f.parent !== -1 && inSet[f.parent]){ inSet[i] = true; out.push(i); changed = true; }
+      });
+    }
+    return out;
   }
 
   // ---------------------------------------------------------------
-  // Network rendering (graph = floating physics / diagram = hierarchical)
+  // Build the full diagram (multi-group grid) as an interactive SVG
+  // ---------------------------------------------------------------
+  var diagramState = null; // { scale, panX, panY }
+
+  function buildDiagramInto(container, groupResults){
+    container.innerHTML = '';
+    container.classList.add('diagram-mode');
+    var n = groupResults.length;
+    if(n === 0){
+      container.innerHTML = '<p class="hint" style="padding:20px;">표시할 세트가 없습니다.</p>';
+      return;
+    }
+    var cols = n <= 1 ? 1 : (n === 2 ? 2 : Math.min(3, Math.ceil(Math.sqrt(n))));
+    var rows = Math.ceil(n / cols);
+    var W = cols * CELL_W, H = rows * CELL_H;
+
+    var svgNS = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('width', W); svg.setAttribute('height', H);
+
+    var bgRect = document.createElementNS(svgNS,'rect');
+    bgRect.setAttribute('x',0); bgRect.setAttribute('y',0);
+    bgRect.setAttribute('width',W); bgRect.setAttribute('height',H);
+    bgRect.setAttribute('fill','#212b2d');
+    bgRect.setAttribute('class','diagram-bg');
+    svg.appendChild(bgRect);
+
+    var viewport = document.createElementNS(svgNS,'g');
+    viewport.setAttribute('id','diagramViewport');
+    svg.appendChild(viewport);
+
+    var allFrames = []; // {gIdx, frames}
+
+    groupResults.forEach(function(g, i){
+      var col = i % cols, row = Math.floor(i / cols);
+      var ox = col * CELL_W, oy = row * CELL_H;
+      var cellG = document.createElementNS(svgNS,'g');
+      cellG.setAttribute('transform','translate('+ox+','+oy+')');
+      viewport.appendChild(cellG);
+
+      var cx = CELL_W/2;
+      if(g.status === 'valid'){
+        var shapesG = document.createElementNS(svgNS,'g');
+        shapesG.setAttribute('data-gidx', String(allFrames.length));
+        cellG.appendChild(shapesG);
+        var frames = buildFrames(g);
+        renderFramesInto(shapesG, frames);
+        allFrames.push({ el:shapesG, frames:frames });
+
+        var cap1 = document.createElementNS(svgNS,'text');
+        cap1.setAttribute('x',cx); cap1.setAttribute('y',260); cap1.setAttribute('text-anchor','middle');
+        cap1.setAttribute('font-family','IBM Plex Mono, monospace'); cap1.setAttribute('font-size','12'); cap1.setAttribute('fill','#8fcb9b');
+        cap1.textContent = '세트 ' + g.groupIndex + ' · 형식 ' + g.templateId;
+        cellG.appendChild(cap1);
+
+        var cap2 = document.createElementNS(svgNS,'text');
+        cap2.setAttribute('x',cx); cap2.setAttribute('y',278); cap2.setAttribute('text-anchor','middle');
+        cap2.setAttribute('font-family','IBM Plex Sans KR, sans-serif'); cap2.setAttribute('font-size','10'); cap2.setAttribute('fill','#a9b6b4');
+        cap2.textContent = g.templateDesc;
+        cellG.appendChild(cap2);
+      } else if(g.status === 'invalid'){
+        cellG.innerHTML =
+          '<rect x="26" y="55" width="'+(CELL_W-52)+'" height="130" rx="10" fill="rgba(224,133,133,0.07)" stroke="#e08585" stroke-width="1.5" stroke-dasharray="6 5"/>' +
+          '<text x="'+cx+'" y="115" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="24" fill="#e08585">×</text>' +
+          '<text x="'+cx+'" y="145" text-anchor="middle" font-family="IBM Plex Sans KR, sans-serif" font-size="11.5" fill="#e08585">올바른 삼단논법 형식이 아닙니다</text>' +
+          '<text x="'+cx+'" y="260" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#e08585">세트 '+g.groupIndex+'</text>';
+      } else {
+        cellG.innerHTML =
+          '<rect x="26" y="55" width="'+(CELL_W-52)+'" height="130" rx="10" fill="rgba(169,182,180,0.05)" stroke="#a9b6b4" stroke-width="1.5" stroke-dasharray="4 4"/>' +
+          '<text x="'+cx+'" y="125" text-anchor="middle" font-family="IBM Plex Sans KR, sans-serif" font-size="11.5" fill="#a9b6b4">입력이 완료되지 않았습니다</text>' +
+          '<text x="'+cx+'" y="260" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a9b6b4">세트 '+g.groupIndex+' (미완성)</text>';
+      }
+    });
+
+    container.appendChild(svg);
+
+    // ---- pan & zoom ----
+    diagramState = { scale:1, panX:0, panY:0 };
+    function applyTransform(){
+      viewport.setAttribute('transform','translate('+diagramState.panX+','+diagramState.panY+') scale('+diagramState.scale+')');
+    }
+    applyTransform();
+
+    function clampScale(s){ return Math.max(0.4, Math.min(3, s)); }
+
+    svg.addEventListener('wheel', function(e){
+      e.preventDefault();
+      var factor = e.deltaY > 0 ? 0.9 : 1.1;
+      diagramState.scale = clampScale(diagramState.scale * factor);
+      applyTransform();
+    }, { passive:false });
+
+    var panning = false, panStart = null, panOrigin = null;
+    bgRect.addEventListener('pointerdown', function(e){
+      panning = true;
+      panStart = { x:e.clientX, y:e.clientY };
+      panOrigin = { x:diagramState.panX, y:diagramState.panY };
+      svg.setPointerCapture(e.pointerId);
+    });
+    svg.addEventListener('pointermove', function(e){
+      if(!panning) return;
+      diagramState.panX = panOrigin.x + (e.clientX - panStart.x);
+      diagramState.panY = panOrigin.y + (e.clientY - panStart.y);
+      applyTransform();
+    });
+    ['pointerup','pointercancel','pointerleave'].forEach(function(evt){
+      svg.addEventListener(evt, function(){ panning = false; });
+    });
+
+    // zoom buttons
+    var zc = document.createElement('div');
+    zc.className = 'zoom-controls';
+    zc.innerHTML = '<button type="button" data-z="in">+</button><button type="button" data-z="out">−</button><button type="button" data-z="reset">⤾</button>';
+    container.appendChild(zc);
+    zc.addEventListener('click', function(e){
+      var btn = e.target.closest('button'); if(!btn) return;
+      if(btn.dataset.z === 'in') diagramState.scale = clampScale(diagramState.scale*1.2);
+      else if(btn.dataset.z === 'out') diagramState.scale = clampScale(diagramState.scale/1.2);
+      else { diagramState.scale=1; diagramState.panX=0; diagramState.panY=0; }
+      applyTransform();
+    });
+
+    // ---- shape dragging (constrained to stay inside parent) ----
+    function localPoint(evt, refEl){
+      var pt = svg.createSVGPoint();
+      pt.x = evt.clientX; pt.y = evt.clientY;
+      var ctm = refEl.getScreenCTM();
+      if(!ctm) return {x:0,y:0};
+      var loc = pt.matrixTransform(ctm.inverse());
+      return { x:loc.x, y:loc.y };
+    }
+
+    allFrames.forEach(function(entry){
+      var shapesG = entry.el, frames = entry.frames;
+      var dragging = null, dragOffset = null, descList = null;
+
+      shapesG.addEventListener('pointerdown', function(e){
+        var target = e.target.closest('.diagram-shape');
+        if(!target) return;
+        e.stopPropagation();
+        var fidx = parseInt(target.getAttribute('data-fidx'), 10);
+        dragging = fidx;
+        descList = descendantsOf(frames, fidx);
+        var p = localPoint(e, shapesG);
+        dragOffset = { x:p.x - frames[fidx].x, y:p.y - frames[fidx].y };
+        shapesG.setPointerCapture(e.pointerId);
+      });
+
+      shapesG.addEventListener('pointermove', function(e){
+        if(dragging === null) return;
+        e.stopPropagation();
+        var p = localPoint(e, shapesG);
+        var nx = p.x - dragOffset.x, ny = p.y - dragOffset.y;
+        var f = frames[dragging];
+        if(f.parent !== -1){
+          var par = frames[f.parent];
+          var dist = Math.hypot(nx-par.x, ny-par.y);
+          var maxDist = Math.max(0, par.r - f.r*0.98);
+          if(dist > maxDist && dist > 0){
+            var k = maxDist / dist;
+            nx = par.x + (nx-par.x)*k;
+            ny = par.y + (ny-par.y)*k;
+          }
+        } else {
+          nx = Math.max(f.r*0.2, Math.min(CELL_W - f.r*0.2, nx));
+          ny = Math.max(f.r*0.2, Math.min(CELL_H - 40 - f.r*0.2, ny));
+        }
+        var dx = nx - f.x, dy = ny - f.y;
+        f.x = nx; f.y = ny;
+        descList.forEach(function(di){ frames[di].x += dx; frames[di].y += dy; });
+        renderFramesInto(shapesG, frames);
+      });
+
+      ['pointerup','pointercancel'].forEach(function(evt){
+        shapesG.addEventListener(evt, function(){ dragging = null; });
+      });
+    });
+  }
+
+  function legendIcon(shape){
+    if(shape === 'circle'){ return '<circle cx="8" cy="8" r="7" fill="rgba(232,196,104,0.25)" stroke="#e8c468" stroke-width="1.5"/>'; }
+    return '<path d="'+fanPathD(8,8,7,BETA)+'" fill="rgba(127,179,213,0.25)" stroke="#7fb3d5" stroke-width="1.5"/>';
+  }
+
+  // ---------------------------------------------------------------
+  // Network / diagram view rendering & switching
   // ---------------------------------------------------------------
   var network = null;
-  var currentData = null;
+  var currentGraphBundle = null;   // {nodes, edges, triples}
+  var currentNodesDS = null, currentEdgesDS = null;
+  var currentGroupResults = null;
   var isDiagram = false;
 
   var graphOptions = {
     nodes:{ shape:'ellipse', font:{ face:'IBM Plex Mono', size:16 }, borderWidth:2 },
     edges:{ arrows:{ to:{ enabled:true, scaleFactor:0.7 } }, smooth:{ type:'continuous' } },
-    physics:{
-      enabled:true,
-      solver:'forceAtlas2Based',
+    physics:{ enabled:true, solver:'forceAtlas2Based',
       forceAtlas2Based:{ gravitationalConstant:-70, springLength:130, springConstant:0.06, avoidOverlap:0.6 },
-      stabilization:{ iterations:180 }
-    },
+      stabilization:{ iterations:180 } },
     interaction:{ dragNodes:true, dragView:true, zoomView:true, hover:true }
   };
 
-  var diagramOptions = {
-    nodes:{ shape:'box', shapeProperties:{ borderRadius:6 }, font:{ face:'IBM Plex Mono', size:15 }, borderWidth:2, margin:10 },
-    edges:{ arrows:{ to:{ enabled:true, scaleFactor:0.7 } }, smooth:{ type:'cubicBezier', forceDirection:'horizontal', roundness:0.5 } },
-    layout:{ hierarchical:{ enabled:true, direction:'LR', sortMethod:'directed', nodeSpacing:130, levelSeparation:170 } },
-    physics:{ enabled:false },
-    interaction:{ dragNodes:true, dragView:true, zoomView:true, hover:true }
-  };
-
-  function renderNetwork(diagram){
+  function renderGraphView(){
     var container = document.getElementById('network');
+    container.classList.remove('diagram-mode');
+    container.innerHTML = '';
+    currentNodesDS = new vis.DataSet(currentGraphBundle.nodes);
+    currentEdgesDS = new vis.DataSet(currentGraphBundle.edges);
+    network = new vis.Network(container, { nodes:currentNodesDS, edges:currentEdgesDS }, graphOptions);
+
+    network.on('doubleClick', function(params){
+      if(params.nodes && params.nodes.length === 1){
+        var nid = params.nodes[0];
+        currentGraphBundle.triples.forEach(function(t){
+          if(t.middleNodeId === nid){
+            t.conclHidden = !t.conclHidden;
+            currentEdgesDS.update({ id:t.conclusionEdgeId, hidden:t.conclHidden });
+          }
+        });
+      } else if(params.edges && params.edges.length === 1 && (!params.nodes || params.nodes.length === 0)){
+        var eid = params.edges[0];
+        currentGraphBundle.triples.forEach(function(t){
+          if(t.conclusionEdgeId === eid){
+            t.midHidden = !t.midHidden;
+            currentNodesDS.update({ id:t.middleNodeId, hidden:t.midHidden });
+            currentEdgesDS.update([
+              { id:t.premiseEdgeIds[0], hidden:t.midHidden },
+              { id:t.premiseEdgeIds[1], hidden:t.midHidden }
+            ]);
+          }
+        });
+      }
+    });
+
+    document.getElementById('dragHint').textContent =
+      '노드를 드래그해서 위치를 옮길 수 있습니다. 가운데(중간 개념) 노드를 더블클릭하면 결론 화살표를, 결론 화살표를 더블클릭하면 중간 노드를 숨기거나 다시 보이게 할 수 있습니다.';
+    document.getElementById('legendBox').innerHTML =
+      '<span><i></i> 모든 (전칭)</span><span><i class="dash"></i> 어떤 (특칭)</span><span><b>×</b> 부정(아니다)</span>';
+  }
+
+  function renderDiagramView(){
     if(network){ network.destroy(); network = null; }
-    var options = diagram ? diagramOptions : graphOptions;
-    network = new vis.Network(container, { nodes:new vis.DataSet(currentData.nodes), edges:new vis.DataSet(currentData.edges) }, options);
-    document.getElementById('dragHint').style.display = 'block';
+    var container = document.getElementById('network');
+    buildDiagramInto(container, currentGroupResults);
+    document.getElementById('dragHint').textContent =
+      '도형을 드래그하면 자유롭게 움직일 수 있고(안쪽 도형은 바깥 도형을 벗어나지 않습니다), 마우스 휠이나 우측 하단 버튼으로 확대·축소, 빈 공간을 드래그하면 화면을 이동할 수 있습니다.';
+    document.getElementById('legendBox').innerHTML =
+      '<span><svg width="16" height="16">' + legendIcon('circle') + '</svg> 원 = 전칭(모든)</span>' +
+      '<span><svg width="16" height="16">' + legendIcon('fan') + '</svg> 부채꼴 = 특칭(어떤)</span>' +
+      '<span><b>×</b> 부정(아니다)</span>';
+  }
+
+  function renderCurrentView(){
+    if(isDiagram){ renderDiagramView(); } else { renderGraphView(); }
   }
 
   // ---------------------------------------------------------------
-  // View switching
+  // View switching / main actions
   // ---------------------------------------------------------------
   var inputView = document.getElementById('inputView');
   var resultView = document.getElementById('resultView');
 
   document.getElementById('doneBtn').addEventListener('click', function(){
-    var statements = collectStatements();
-    if(statements.length === 0){
-      alert('최소 한 문장 이상 단어를 입력해주세요.');
-      return;
-    }
-    currentData = buildGraphData(statements);
-    isDiagram = false;
+    var flat = collectFlatRaw();
+    if(flat.length === 0){ alert('최소 한 문장 이상 단어를 입력해주세요.'); return; }
+    var grouped = collectGroupedRaw();
+    currentGraphBundle = buildGraphAndTriples(grouped);
+    currentGroupResults = grouped.map(evaluateGroupSyllogism);
 
+    var contradictions = findContradictions(flat);
+    var cycles = findCycles(flat);
+
+    isDiagram = false;
     inputView.classList.add('hidden');
     resultView.classList.remove('hidden');
     document.getElementById('viewTitle').textContent = '논리 그래프';
     document.getElementById('toggleBtn').textContent = '다이어그램으로 보기';
 
-    renderNetwork(false);
-    renderEvalList(evaluateLogic(statements));
-
-    resultView.__statements = statements;
+    renderCurrentView();
+    renderEvalList(currentGroupResults, contradictions, cycles);
   });
 
   document.getElementById('toggleBtn').addEventListener('click', function(){
     isDiagram = !isDiagram;
-    renderNetwork(isDiagram);
     document.getElementById('viewTitle').textContent = isDiagram ? '논리 다이어그램' : '논리 그래프';
     document.getElementById('toggleBtn').textContent = isDiagram ? '그래프로 보기' : '다이어그램으로 보기';
+    renderCurrentView();
   });
 
   document.getElementById('backBtn').addEventListener('click', function(){
@@ -648,20 +928,39 @@
   });
 
   document.getElementById('saveImgBtn').addEventListener('click', function(){
-    if(!network) return;
-    try{
-      var canvas = network.canvas.frame.canvas;
-      var url = canvas.toDataURL('image/png');
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = (isDiagram ? '삼단논법_다이어그램' : '삼단논법_그래프') + '.png';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }catch(err){
-      alert('이미지 저장에 실패했습니다: ' + err.message);
+    if(isDiagram){
+      var svgEl = document.querySelector('#network svg');
+      if(!svgEl){ alert('저장할 다이어그램이 없습니다.'); return; }
+      var clone = svgEl.cloneNode(true);
+      var zc = clone.querySelector? null : null;
+      var xml = new XMLSerializer().serializeToString(svgEl);
+      var w = parseInt(svgEl.getAttribute('width'), 10) || 800;
+      var h = parseInt(svgEl.getAttribute('height'), 10) || 600;
+      var img = new Image();
+      var svgData = 'data:image/svg+xml;charset=utf-8;base64,' + btoa(unescape(encodeURIComponent(xml)));
+      img.onload = function(){
+        var canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        triggerDownload(canvas.toDataURL('image/png'), '삼단논법_다이어그램.png');
+      };
+      img.onerror = function(){ alert('이미지 저장에 실패했습니다.'); };
+      img.src = svgData;
+    } else {
+      if(!network){ return; }
+      try{
+        var canvas2 = network.canvas.frame.canvas;
+        triggerDownload(canvas2.toDataURL('image/png'), '삼단논법_그래프.png');
+      }catch(err){ alert('이미지 저장에 실패했습니다: ' + err.message); }
     }
   });
+
+  function triggerDownload(url, filename){
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
 
 })();
 </script>
