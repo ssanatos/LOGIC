@@ -140,6 +140,24 @@
   .zoom-controls button:hover{ border-color:var(--chalk-dim); }
 
   @media (max-width:520px){ #network{ height:380px; } }
+ 
+  /* ---------- ad bar (Coupang Partners) ---------- */
+  #ad-bar{
+      flex:0 0 auto;
+      display:flex; flex-direction:column; align-items:center;
+      gap:4px;
+      padding:2px 0 10px 0;
+      position:relative; z-index:5;
+  }
+  #ad-bar .ad-disclosure{
+      font-size:10px; color:var(--text-dim); letter-spacing:0.01em; text-align:center;
+      padding:0 14px;
+  }
+  #ad-bar .ad-slot{
+      min-height:50px; min-width:240px;
+      display:flex; align-items:center; justify-content:center;
+  }
+
 </style>
 </head>
 <body>
@@ -185,6 +203,18 @@
     </div>
   </main>
 
+</div>
+
+<div id="result"></div>
+  <div id="ad-bar">
+    <div class="ad-disclosure">이 앱은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</div>
+    <div class="ad-slot">
+      <script src="https://ads-partners.coupang.com/g.js"></script>
+      <script>
+          new PartnersCoupang.G({"id":1000572,"trackingCode":"AF0795367","subId":null,"template":"carousel","width":"240","height":"50"});
+      </script>
+    </div>
+  </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
@@ -519,18 +549,25 @@
   }
 
   // =================================================================
-  // DIAGRAM: real pie-slice "fan" (부채꼴) shapes, nested, draggable
-  // (constrained inside their parent), pannable & zoomable.
+  // DIAGRAM: real pie-slice "fan" (부채꼴) shapes, nested, physics
+  // (spring/magnet) draggable — every non-root shape is ALWAYS hard-
+  // clamped to stay strictly inside its parent shape's true boundary,
+  // and releasing a shape lets the whole set settle back into place.
   // =================================================================
   var CELL_W = 260, CELL_H = 300;
   var BETA = 46 * Math.PI / 180;   // fan half-angle
   var MARGIN = 0.82;               // how much of the parent's room a child uses
+  var SPRING_K = 0.16;             // parent<->child spring stiffness
+  var HOME_K = 0.09;               // root -> home-position spring stiffness
+  var DAMPING = 0.72;              // velocity damping per tick
+  var SETTLE_EPS = 0.04;           // velocity magnitude considered "at rest"
+  var SETTLE_MAX_TICKS = 240;      // safety cap so the loop always stops
 
   function esc(s){
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  // compute a child frame that sits fully inside the parent frame
+  // compute a child frame that sits fully inside the parent frame (initial layout)
   function childFrame(parent, childType){
     if(parent.type === 'circle'){
       if(childType === 'circle'){
@@ -538,7 +575,6 @@
       }
       return { type:'fan', x:parent.x, y:parent.y, r:parent.r*MARGIN, beta:BETA };
     }
-    // parent is a fan (vertex at parent.x,parent.y, opening toward +x)
     if(childType === 'circle'){
       var R = parent.r, beta = parent.beta;
       var d = (R/(1+Math.sin(beta))) * MARGIN;
@@ -548,32 +584,74 @@
     return { type:'fan', x:parent.x, y:parent.y, r:parent.r*MARGIN, beta:parent.beta*0.82 };
   }
 
+  // ---- STRICT containment: a child (footprint circle of radius r, since a
+  // fan's own points are all within r of its vertex) must stay fully inside
+  // the parent's ACTUAL boundary — two straight edges + the arc for a fan,
+  // or the plain radius for a circle. Iterative projection keeps this exact
+  // even under fast dragging.
+  function clampCircleInCircle(cx,cy,cr, px,py,pr){
+    var dx = cx-px, dy = cy-py, dist = Math.hypot(dx,dy);
+    var maxDist = Math.max(0, pr-cr);
+    if(dist > maxDist){
+      if(dist < 1e-6) return { x:px+maxDist, y:py };
+      var k = maxDist/dist;
+      return { x:px+dx*k, y:py+dy*k };
+    }
+    return { x:cx, y:cy };
+  }
+  function clampInFan(cx,cy,cr, parent){
+    var lx = cx-parent.x, ly = cy-parent.y;
+    var sB = Math.sin(parent.beta), cB = Math.cos(parent.beta);
+    for(var i=0;i<5;i++){
+      var d1 = lx*sB - ly*cB;
+      if(d1 < cr){ var def1 = cr-d1; lx += def1*sB; ly += -def1*cB; }
+      var d2 = lx*sB + ly*cB;
+      if(d2 < cr){ var def2 = cr-d2; lx += def2*sB; ly += def2*cB; }
+      var dist = Math.hypot(lx,ly);
+      var maxDist = Math.max(0, parent.r-cr);
+      if(dist > maxDist){
+        if(dist < 1e-6){ lx = maxDist; ly = 0; }
+        else { var k = maxDist/dist; lx *= k; ly *= k; }
+      }
+    }
+    return { x:parent.x+lx, y:parent.y+ly };
+  }
+  function clampChildInParent(cx,cy,cr, parent){
+    return parent.type === 'circle' ? clampCircleInCircle(cx,cy,cr, parent.x,parent.y,parent.r) : clampInFan(cx,cy,cr, parent);
+  }
+
   // build the frame tree (flat array with parent indices) for one group's diagram
   function buildFrames(groupResult){
     var frames = [];
     if(groupResult.diagramType === 'chain'){
       var items = groupResult.items;
-      var root = { type:'fan', x:64, y:150, r:78, beta:BETA, label:items[0].label, role:items[0].role, parent:-1 };
+      var root = { type:'fan', x:64, y:150, r:78, beta:BETA, label:items[0].label, role:items[0].role, parent:-1, vx:0, vy:0 };
+      root.homeX = root.x; root.homeY = root.y;
       frames.push(root);
       var prev = root;
       for(var i=1;i<items.length;i++){
         var f = childFrame(prev, items[i].shape);
-        f.label = items[i].label; f.role = items[i].role; f.parent = frames.length-1;
+        f.label = items[i].label; f.role = items[i].role; f.parent = frames.length-1; f.vx=0; f.vy=0;
+        f.idealDX = f.x - prev.x; f.idealDY = f.y - prev.y;
         frames.push(f);
         prev = f;
       }
     } else { // split (template 8)
       var c0 = groupResult.clusters[0], c1 = groupResult.clusters[1];
-      var root0 = { type:'fan', x:46, y:160, r:46, beta:BETA, label:c0[0].label, role:c0[0].role, parent:-1 };
+      var root0 = { type:'fan', x:46, y:160, r:46, beta:BETA, label:c0[0].label, role:c0[0].role, parent:-1, vx:0, vy:0 };
+      root0.homeX = root0.x; root0.homeY = root0.y;
       frames.push(root0);
       var child0 = childFrame(root0, c0[1].shape);
-      child0.label = c0[1].label; child0.role = c0[1].role; child0.parent = 0;
+      child0.label = c0[1].label; child0.role = c0[1].role; child0.parent = 0; child0.vx=0; child0.vy=0;
+      child0.idealDX = child0.x-root0.x; child0.idealDY = child0.y-root0.y;
       frames.push(child0);
 
-      var root1 = { type:'fan', x:172, y:160, r:46, beta:BETA, label:c1[0].label, role:c1[0].role, parent:-1 };
+      var root1 = { type:'fan', x:172, y:160, r:46, beta:BETA, label:c1[0].label, role:c1[0].role, parent:-1, vx:0, vy:0 };
+      root1.homeX = root1.x; root1.homeY = root1.y;
       frames.push(root1);
       var child1 = childFrame(root1, c1[1].shape);
-      child1.label = c1[1].label; child1.role = c1[1].role; child1.parent = 2;
+      child1.label = c1[1].label; child1.role = c1[1].role; child1.parent = 2; child1.vx=0; child1.vy=0;
+      child1.idealDX = child1.x-root1.x; child1.idealDY = child1.y-root1.y;
       frames.push(child1);
     }
     return frames;
@@ -618,17 +696,95 @@
     gEl.innerHTML = html;
   }
 
-  function descendantsOf(frames, idx){
-    var out = [];
-    var changed = true;
-    var inSet = {}; inSet[idx] = true;
-    while(changed){
-      changed = false;
-      frames.forEach(function(f, i){
-        if(!inSet[i] && f.parent !== -1 && inSet[f.parent]){ inSet[i] = true; out.push(i); changed = true; }
-      });
+  // ---------------------------------------------------------------
+  // Spring ("magnet") physics: dragged shape is kinematic (follows the
+  // pointer); every other shape is pulled toward its ideal relative
+  // offset from its parent (and pulls its parent back too), so tugging
+  // any one shape drags the rest of the set along naturally. A hard
+  // containment clamp runs every tick (root-to-leaf) so an inner shape
+  // can never even momentarily poke outside its parent.
+  // ---------------------------------------------------------------
+  function physicsTick(frames, draggedIdx, desired){
+    if(draggedIdx !== null && draggedIdx !== undefined){
+      frames[draggedIdx].x = desired.x; frames[draggedIdx].y = desired.y;
+      frames[draggedIdx].vx = 0; frames[draggedIdx].vy = 0;
     }
-    return out;
+    var fx = frames.map(function(){ return 0; });
+    var fy = frames.map(function(){ return 0; });
+
+    frames.forEach(function(f, i){
+      if(f.parent === -1){
+        if(i === draggedIdx) return;
+        fx[i] += (f.homeX - f.x) * HOME_K;
+        fy[i] += (f.homeY - f.y) * HOME_K;
+      } else {
+        var p = frames[f.parent];
+        var childX = (i === draggedIdx) ? desired.x : f.x;
+        var childY = (i === draggedIdx) ? desired.y : f.y;
+        // pull child toward parent + idealOffset
+        if(i !== draggedIdx){
+          fx[i] += ((p.x + f.idealDX) - f.x) * SPRING_K;
+          fy[i] += ((p.y + f.idealDY) - f.y) * SPRING_K;
+        }
+        // pull parent toward child - idealOffset (so dragging a child tugs its parent along)
+        if(f.parent !== draggedIdx){
+          fx[f.parent] += ((childX - f.idealDX) - p.x) * SPRING_K;
+          fy[f.parent] += ((childY - f.idealDY) - p.y) * SPRING_K;
+        }
+      }
+    });
+
+    frames.forEach(function(f, i){
+      if(i === draggedIdx) return;
+      f.vx = (f.vx + fx[i]) * DAMPING;
+      f.vy = (f.vy + fy[i]) * DAMPING;
+      f.x += f.vx; f.y += f.vy;
+    });
+
+    // hard containment clamp, root -> leaf (frames array is already in that order)
+    frames.forEach(function(f){
+      if(f.parent === -1) return;
+      var p = frames[f.parent];
+      var res = clampChildInParent(f.x, f.y, f.r, p);
+      f.x = res.x; f.y = res.y;
+    });
+    // keep roots loosely within the visible cell
+    frames.forEach(function(f){
+      if(f.parent !== -1) return;
+      f.x = Math.max(f.r*0.2, Math.min(CELL_W - f.r*0.2, f.x));
+      f.y = Math.max(f.r*0.2, Math.min(CELL_H - 40 - f.r*0.2, f.y));
+    });
+  }
+
+  function maxSpeed(frames){
+    var m = 0;
+    frames.forEach(function(f){ m = Math.max(m, Math.hypot(f.vx||0, f.vy||0)); });
+    return m;
+  }
+
+  // one global animation driver shared by every group's shape-set
+  var activeSim = null;      // { entry, frameIdx, desired, dragging, settleTicks }
+  var simRunning = false;
+
+  function tickPhysics(){
+    if(!activeSim){ simRunning = false; return; }
+    var entry = activeSim.entry, frames = entry.frames;
+    var draggedIdx = activeSim.dragging ? activeSim.frameIdx : null;
+    physicsTick(frames, draggedIdx, activeSim.desired);
+    renderFramesInto(entry.el, frames);
+
+    if(!activeSim.dragging){
+      activeSim.settleTicks = (activeSim.settleTicks||0) + 1;
+      if(maxSpeed(frames) < SETTLE_EPS || activeSim.settleTicks > SETTLE_MAX_TICKS){
+        activeSim = null; simRunning = false; return;
+      }
+    }
+    requestAnimationFrame(tickPhysics);
+  }
+
+  function startSim(entry, frameIdx, desired){
+    activeSim = { entry:entry, frameIdx:frameIdx, desired:desired, dragging:true, settleTicks:0 };
+    if(!simRunning){ simRunning = true; requestAnimationFrame(tickPhysics); }
   }
 
   // ---------------------------------------------------------------
@@ -637,6 +793,7 @@
   var diagramState = null; // { scale, panX, panY }
 
   function buildDiagramInto(container, groupResults){
+    activeSim = null; simRunning = false;
     container.innerHTML = '';
     container.classList.add('diagram-mode');
     var n = groupResults.length;
@@ -664,7 +821,7 @@
     viewport.setAttribute('id','diagramViewport');
     svg.appendChild(viewport);
 
-    var allFrames = []; // {gIdx, frames}
+    var entries = []; // {el, frames}
 
     groupResults.forEach(function(g, i){
       var col = i % cols, row = Math.floor(i / cols);
@@ -676,11 +833,10 @@
       var cx = CELL_W/2;
       if(g.status === 'valid'){
         var shapesG = document.createElementNS(svgNS,'g');
-        shapesG.setAttribute('data-gidx', String(allFrames.length));
         cellG.appendChild(shapesG);
         var frames = buildFrames(g);
         renderFramesInto(shapesG, frames);
-        allFrames.push({ el:shapesG, frames:frames });
+        entries.push({ el:shapesG, frames:frames });
 
         var cap1 = document.createElementNS(svgNS,'text');
         cap1.setAttribute('x',cx); cap1.setAttribute('y',260); cap1.setAttribute('text-anchor','middle');
@@ -715,7 +871,6 @@
       viewport.setAttribute('transform','translate('+diagramState.panX+','+diagramState.panY+') scale('+diagramState.scale+')');
     }
     applyTransform();
-
     function clampScale(s){ return Math.max(0.4, Math.min(3, s)); }
 
     svg.addEventListener('wheel', function(e){
@@ -742,7 +897,6 @@
       svg.addEventListener(evt, function(){ panning = false; });
     });
 
-    // zoom buttons
     var zc = document.createElement('div');
     zc.className = 'zoom-controls';
     zc.innerHTML = '<button type="button" data-z="in">+</button><button type="button" data-z="out">−</button><button type="button" data-z="reset">⤾</button>';
@@ -755,7 +909,7 @@
       applyTransform();
     });
 
-    // ---- shape dragging (constrained to stay inside parent) ----
+    // ---- shape dragging (spring physics + hard containment clamp) ----
     function localPoint(evt, refEl){
       var pt = svg.createSVGPoint();
       pt.x = evt.clientX; pt.y = evt.clientY;
@@ -765,49 +919,35 @@
       return { x:loc.x, y:loc.y };
     }
 
-    allFrames.forEach(function(entry){
+    entries.forEach(function(entry){
       var shapesG = entry.el, frames = entry.frames;
-      var dragging = null, dragOffset = null, descList = null;
+      var dragOffset = null;
 
       shapesG.addEventListener('pointerdown', function(e){
         var target = e.target.closest('.diagram-shape');
         if(!target) return;
         e.stopPropagation();
         var fidx = parseInt(target.getAttribute('data-fidx'), 10);
-        dragging = fidx;
-        descList = descendantsOf(frames, fidx);
         var p = localPoint(e, shapesG);
         dragOffset = { x:p.x - frames[fidx].x, y:p.y - frames[fidx].y };
+        startSim(entry, fidx, { x:frames[fidx].x, y:frames[fidx].y });
         shapesG.setPointerCapture(e.pointerId);
       });
 
       shapesG.addEventListener('pointermove', function(e){
-        if(dragging === null) return;
+        if(!activeSim || activeSim.entry !== entry || !activeSim.dragging) return;
         e.stopPropagation();
         var p = localPoint(e, shapesG);
-        var nx = p.x - dragOffset.x, ny = p.y - dragOffset.y;
-        var f = frames[dragging];
-        if(f.parent !== -1){
-          var par = frames[f.parent];
-          var dist = Math.hypot(nx-par.x, ny-par.y);
-          var maxDist = Math.max(0, par.r - f.r*0.98);
-          if(dist > maxDist && dist > 0){
-            var k = maxDist / dist;
-            nx = par.x + (nx-par.x)*k;
-            ny = par.y + (ny-par.y)*k;
-          }
-        } else {
-          nx = Math.max(f.r*0.2, Math.min(CELL_W - f.r*0.2, nx));
-          ny = Math.max(f.r*0.2, Math.min(CELL_H - 40 - f.r*0.2, ny));
-        }
-        var dx = nx - f.x, dy = ny - f.y;
-        f.x = nx; f.y = ny;
-        descList.forEach(function(di){ frames[di].x += dx; frames[di].y += dy; });
-        renderFramesInto(shapesG, frames);
+        activeSim.desired = { x:p.x - dragOffset.x, y:p.y - dragOffset.y };
       });
 
       ['pointerup','pointercancel'].forEach(function(evt){
-        shapesG.addEventListener(evt, function(){ dragging = null; });
+        shapesG.addEventListener(evt, function(){
+          if(activeSim && activeSim.entry === entry){
+            activeSim.dragging = false;
+            activeSim.settleTicks = 0;
+          }
+        });
       });
     });
   }
@@ -878,7 +1018,7 @@
     var container = document.getElementById('network');
     buildDiagramInto(container, currentGroupResults);
     document.getElementById('dragHint').textContent =
-      '도형을 드래그하면 자유롭게 움직일 수 있고(안쪽 도형은 바깥 도형을 벗어나지 않습니다), 마우스 휠이나 우측 하단 버튼으로 확대·축소, 빈 공간을 드래그하면 화면을 이동할 수 있습니다.';
+      '도형을 드래그하면 자석처럼 서로 끌어당기며 나머지 도형도 함께 따라 움직입니다 (안쪽 도형은 바깥 도형을 절대 벗어나지 않습니다). 손을 떼면 자연스럽게 제자리로 정렬됩니다. 휠이나 우측 하단 버튼으로 확대·축소, 빈 공간 드래그로 화면 이동이 가능합니다.';
     document.getElementById('legendBox').innerHTML =
       '<span><svg width="16" height="16">' + legendIcon('circle') + '</svg> 원 = 전칭(모든)</span>' +
       '<span><svg width="16" height="16">' + legendIcon('fan') + '</svg> 부채꼴 = 특칭(어떤)</span>' +
@@ -931,8 +1071,6 @@
     if(isDiagram){
       var svgEl = document.querySelector('#network svg');
       if(!svgEl){ alert('저장할 다이어그램이 없습니다.'); return; }
-      var clone = svgEl.cloneNode(true);
-      var zc = clone.querySelector? null : null;
       var xml = new XMLSerializer().serializeToString(svgEl);
       var w = parseInt(svgEl.getAttribute('width'), 10) || 800;
       var h = parseInt(svgEl.getAttribute('height'), 10) || 600;
