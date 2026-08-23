@@ -103,9 +103,9 @@
   .btn.small{ padding:8px 12px; font-size:11.5px; flex:0 0 auto; }
 
   /* ---------- result view ---------- */
-  .result-card, .eval-card{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 12px; margin-bottom:14px; }
+  .result-card, .eval-card, .stats-card{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 12px; margin-bottom:14px; }
   .result-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; gap:10px; flex-wrap:wrap; }
-  .result-head h2, .eval-card h3{ font-family:'Space Grotesk', sans-serif; font-size:16px; margin:0; font-weight:700; }
+  .result-head h2, .eval-card h3, .stats-card h3{ font-family:'Space Grotesk', sans-serif; font-size:16px; margin:0 0 12px; font-weight:700; }
   #network{
     height:440px; width:100%;
     background:
@@ -125,8 +125,13 @@
 
   .legend{ display:flex; gap:14px; flex-wrap:wrap; font-size:11px; color:var(--chalk-dim); margin-top:11px; font-family:'IBM Plex Mono', monospace; align-items:center; }
   .legend span{ display:inline-flex; align-items:center; gap:6px; }
-  .legend i{ width:15px; height:0; border-top:2px solid var(--blue); display:inline-block; }
-  .legend i.dash{ border-top:2px dashed var(--pink); }
+  .legend i{ width:15px; height:0; display:inline-block; }
+  .legend i.ls-solid{ border-top:2px solid var(--chalk-dim); }
+  .legend i.ls-dashed{ border-top:2px dashed var(--chalk-dim); }
+  .legend i.ls-premise{ border-top:3px solid #7fb3d5; }
+  .legend i.ls-conclusion{ border-top:3px solid #e8c468; }
+  .legend i.ls-exception{ border-top:3px solid #ffffff; }
+  .legend i.ls-contradiction{ border-top:3px solid #111111; }
   .legend b{ color:var(--danger); font-style:normal; }
   .legend svg{ display:block; }
 
@@ -135,12 +140,25 @@
   .eval-card li.ok{ border-left-color:var(--ok); background:rgba(143,203,155,0.08); }
   .eval-card li.info{ border-left-color:var(--blue); background:rgba(127,179,213,0.08); }
 
+  .stats-grid{ display:flex; flex-wrap:wrap; gap:10px; }
+  .stat-chip{
+    flex:1 1 140px; min-width:140px;
+    background:var(--panel-2); border:1px solid var(--line); border-radius:8px;
+    padding:12px 12px 10px;
+  }
+  .stat-chip .stat-value{ font-family:'Space Grotesk', sans-serif; font-size:22px; font-weight:700; color:var(--chalk); line-height:1.1; }
+  .stat-chip .stat-value b{ font-size:13px; font-weight:500; color:var(--chalk-dim); margin-left:2px; }
+  .stat-chip .stat-label{ font-size:11.5px; color:var(--chalk-dim); margin-top:5px; line-height:1.4; }
+  .stat-chip.warn .stat-value{ color:var(--danger); }
+  .stat-chip.ok .stat-value{ color:var(--ok); }
+  .stat-chip .stat-sub{ font-size:10.5px; color:var(--chalk-dim); margin-top:3px; font-family:'IBM Plex Mono', monospace; }
+
   .zoom-controls{ position:absolute; right:8px; bottom:8px; display:flex; flex-direction:column; gap:4px; z-index:5; }
   .zoom-controls button{ width:28px; height:28px; border-radius:6px; border:1px solid var(--line); background:rgba(27,35,37,0.85); color:var(--chalk); font-family:'IBM Plex Mono',monospace; font-size:15px; cursor:pointer; line-height:1; }
   .zoom-controls button:hover{ border-color:var(--chalk-dim); }
 
   @media (max-width:520px){ #network{ height:380px; } }
- 
+
   /* ---------- ad bar (Coupang Partners) ---------- */
   #ad-bar{
       flex:0 0 auto;
@@ -177,6 +195,11 @@
       <button id="addBtn" class="btn btn-ghost">+ 추가</button>
       <button id="doneBtn" class="btn btn-primary">완료</button>
     </div>
+    <div class="actions">
+      <button id="saveFileBtn" class="btn btn-ghost small">파일로 저장</button>
+      <button id="loadFileBtn" class="btn btn-ghost small">파일 불러오기</button>
+      <input type="file" id="loadFileInput" accept="application/json,.json" style="display:none;">
+    </div>
   </main>
 
   <!-- ============ RESULT VIEW ============ -->
@@ -190,6 +213,11 @@
       <div id="network"></div>
       <p class="hint" id="dragHint"></p>
       <div class="legend" id="legendBox"></div>
+    </div>
+
+    <div class="stats-card" id="statsCard">
+      <h3>그래프 통계</h3>
+      <div class="stats-grid" id="statsGrid"></div>
     </div>
 
     <div class="eval-card">
@@ -211,7 +239,7 @@
     <div class="ad-slot">
       <script src="https://ads-partners.coupang.com/g.js"></script>
       <script>
-          new PartnersCoupang.G({"id":1000572,"trackingCode":"AF0795367","subId":null,"template":"carousel","width":"240","height":"50"});
+          new PartnersCoupang.G({"id":1000572,"trackingCode":"AF0795367","subId":null,"template":"carousel","width":"280","height":"50"});
       </script>
     </div>
   </div>
@@ -273,6 +301,88 @@
   addGroup();
 
   // ---------------------------------------------------------------
+  // Save / load the current input as a JSON file, so a session can be
+  // resumed later without retyping everything.
+  // ---------------------------------------------------------------
+  function exportGroupsForFile(){
+    var groups = [];
+    groupsEl.querySelectorAll('.group').forEach(function(gEl){
+      var rows = [];
+      gEl.querySelectorAll('.row').forEach(function(row){
+        rows.push({
+          quant: row.querySelector('.quant').value,
+          wordLeft: row.querySelector('.wordLeft').value,
+          particle: row.querySelector('.particle').value,
+          wordRight: row.querySelector('.wordRight').value,
+          copula: row.querySelector('.copula').value
+        });
+      });
+      groups.push(rows);
+    });
+    return groups;
+  }
+
+  function importGroupsFromFile(groups){
+    if(!Array.isArray(groups) || groups.length === 0){
+      alert('올바른 형식의 파일이 아닙니다.');
+      return;
+    }
+    groupsEl.innerHTML = '';
+    groupCount = 0;
+    groups.forEach(function(rows){
+      groupCount++;
+      var g = document.createElement('div');
+      g.className = 'group';
+      g.dataset.groupId = groupCount;
+      var removeBtn = groupCount > 1 ? '<button type="button" class="group-remove" onclick="this.closest(\'.group\').remove(); window.__renumber();">삭제</button>' : '';
+      var rowsHtml = rowHTML() + rowHTML() + rowHTML();
+      g.innerHTML = '<div class="group-label"><span>세트 ' + groupCount + '</span>' + removeBtn + '</div>' + rowsHtml;
+      groupsEl.appendChild(g);
+      var rowEls = g.querySelectorAll('.row');
+      rowEls.forEach(function(rowEl, idx){
+        var r = (rows && rows[idx]) || {};
+        if(r.quant) rowEl.querySelector('.quant').value = r.quant;
+        if(r.wordLeft !== undefined) rowEl.querySelector('.wordLeft').value = r.wordLeft;
+        if(r.particle) rowEl.querySelector('.particle').value = r.particle;
+        if(r.wordRight !== undefined) rowEl.querySelector('.wordRight').value = r.wordRight;
+        if(r.copula) rowEl.querySelector('.copula').value = r.copula;
+      });
+    });
+    renumberBadges();
+  }
+
+  document.getElementById('saveFileBtn').addEventListener('click', function(){
+    var payload = { type:'삼단논법-게시판', version:1, savedAt:new Date().toISOString(), groups: exportGroupsForFile() };
+    var json = JSON.stringify(payload, null, 2);
+    var blob = new Blob([json], { type:'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = '삼단논법_입력.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('loadFileBtn').addEventListener('click', function(){
+    document.getElementById('loadFileInput').click();
+  });
+  document.getElementById('loadFileInput').addEventListener('change', function(e){
+    var file = e.target.files && e.target.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(evt){
+      try{
+        var data = JSON.parse(evt.target.result);
+        var groups = Array.isArray(data) ? data : data.groups;
+        importGroupsFromFile(groups);
+      }catch(err){
+        alert('파일을 읽을 수 없습니다: ' + err.message);
+      }
+    };
+    reader.readAsText(file, 'utf-8');
+    e.target.value = '';
+  });
+
+  // ---------------------------------------------------------------
   // Raw statement extraction
   // ---------------------------------------------------------------
   function rowToRaw(row){
@@ -311,16 +421,134 @@
 
   function labelOf(word, neg){ return word + (neg ? '×' : ''); }
 
-  // ---------------------------------------------------------------
-  // GRAPH data (floating network) — built per group so we can also
-  // identify "middle node" / "conclusion edge" triples for the
-  // double-click show/hide behaviour.
-  // ---------------------------------------------------------------
-  function buildGraphAndTriples(groupedRaw){
-    var nodeMap = new Map();
-    var nodes = [], edges = [], triples = [];
-    var edgeCounter = 0;
+  // Given one input group (up to 3 rows), compute the edges that should be
+  // drawn/analysed for it — same contrapositive rewrite used by both the
+  // graph and the statistics below, kept in one place so they never disagree.
+  function computeGroupEdges(group){
+    var rewriteRowIndex = -1;
+    if(group.rows.length === 3 && group.rows.every(function(r){ return r.subj && r.pred; })){
+      var m = matchGroup(group.rows);
+      if(m && m.template.id === 8 && typeof m.p1RowIndex === 'number'){
+        var p1Raw = group.rows[m.p1RowIndex];
+        if(!p1Raw.subjNeg){ rewriteRowIndex = m.p1RowIndex; }
+      }
+    }
+    var result = [];
+    group.rows.forEach(function(r, idx){
+      if(!r.subj || !r.pred) return;
+      var fromLabel, toLabel, solid;
+      if(idx === rewriteRowIndex){
+        // contrapositive of "모든 subj는 pred이다": 모든 (pred가 아닌 것)은 (subj가 아닌 것)이다
+        fromLabel = labelOf(r.pred, true);
+        toLabel = labelOf(r.subj, true);
+        solid = true;
+      } else {
+        fromLabel = labelOf(r.subj, r.subjNeg);
+        toLabel = labelOf(r.pred, r.predNeg);
+        solid = (r.quant === '모든');
+      }
+      result.push({ rowIndex:idx, fromLabel:fromLabel, toLabel:toLabel, solid:solid,
+        role: (idx === 2 ? 'conclusion' : 'premise') });
+    });
+    return result;
+  }
 
+  // ---------------------------------------------------------------
+  // GRAPH data (floating network). Overlapping same-direction arrows
+  // (same fromLabel->toLabel, however many rows produced them) are drawn
+  // as a single merged edge — solid wins over dashed if both occur.
+  // A<->B in opposite directions stay separate.
+  //
+  // Edge colour encodes ROLE (premise vs conclusion) within whichever
+  // triangle it belongs to — dashing already shows 모든/어떤, so colour is
+  // free for that. If a merged edge's role isn't the same in every
+  // triangle it appears in (or it never closes a real triangle at all) we
+  // can't pick a side, so it's drawn white. A special case overrides all
+  // of that: if the same source has a *solid* ("모든") arrow to both X and
+  // its negation X×, that's a direct contradiction, and both arrows are
+  // drawn black regardless of role.
+  //
+  // Terms that appear both as X and X× are drawn as a fused two-tone
+  // capsule (two touching boxes, "X" then "X×") instead of two separate
+  // floating circles, so an arrow aimed at X and one aimed at X× visibly
+  // land on the correct half of the same "button".
+  // ---------------------------------------------------------------
+  var PREMISE_COLOR = '#7fb3d5';
+  var CONCLUSION_COLOR = '#e8c468';
+  var NO_ROLE_COLOR = '#ffffff';
+  var CONTRADICTION_COLOR = '#111111';
+  var PAIR_BOX_W = 52, PAIR_BOX_H = 34;
+
+  function buildGraphAndTriples(groupedRaw){
+    // 1) raw edges per group, plus whether that group closes into a triangle
+    var rawByGroup = [];
+    groupedRaw.forEach(function(group){
+      var ge = computeGroupEdges(group);
+      var middleLabel = null;
+      if(ge.length === 3){
+        var s1 = [ge[0].fromLabel, ge[0].toLabel], s2 = [ge[1].fromLabel, ge[1].toLabel];
+        s1.forEach(function(l){ if(s2.indexOf(l) !== -1) middleLabel = l; });
+      }
+      rawByGroup.push({ edges:ge, hasTriangle: !!middleLabel, middleLabel:middleLabel });
+    });
+
+    // 2) merge same-direction duplicate edges
+    var mergedMap = new Map(); // "from\u0001to" -> {fromLabel,toLabel,solid,occurrences:[{role,hasTriangle}]}
+    rawByGroup.forEach(function(gInfo){
+      gInfo.edges.forEach(function(e){
+        var key = e.fromLabel + '\u0001' + e.toLabel;
+        if(!mergedMap.has(key)){
+          mergedMap.set(key, { fromLabel:e.fromLabel, toLabel:e.toLabel, solid:false, occurrences:[] });
+        }
+        var m = mergedMap.get(key);
+        if(e.solid) m.solid = true; // solid wins over dashed
+        m.occurrences.push({ role:e.role, hasTriangle:gInfo.hasTriangle });
+      });
+    });
+
+    // 3) finalize merged edges: id, stats-role (conclusion wins, used for
+    // counting), colour-role (only trusted when consistent within the
+    // triangle(s) it actually closes)
+    var mergedEdges = [];
+    var edgeKeyToId = {};
+    var ec = 0;
+    mergedMap.forEach(function(m, key){
+      var id = 'e' + (ec++);
+      var statsRole = m.occurrences.some(function(o){ return o.role === 'conclusion'; }) ? 'conclusion' : 'premise';
+      var triangleOccs = m.occurrences.filter(function(o){ return o.hasTriangle; });
+      var colorRole = 'ambiguous';
+      if(triangleOccs.length > 0){
+        var roles = {};
+        triangleOccs.forEach(function(o){ roles[o.role] = true; });
+        var roleKeys = Object.keys(roles);
+        if(roleKeys.length === 1) colorRole = roleKeys[0];
+      }
+      mergedEdges.push({ id:id, fromLabel:m.fromLabel, toLabel:m.toLabel, solid:m.solid,
+        statsRole:statsRole, colorRole:colorRole });
+      edgeKeyToId[key] = id;
+    });
+
+    // 4) contradictions: same source, solid arrows to both X and X×
+    var bySource = {};
+    mergedEdges.forEach(function(e){
+      if(!e.solid) return;
+      bySource[e.fromLabel] = bySource[e.fromLabel] || [];
+      bySource[e.fromLabel].push(e);
+    });
+    var contradictionIds = {};
+    Object.keys(bySource).forEach(function(src){
+      var list = bySource[src];
+      list.forEach(function(e1){
+        list.forEach(function(e2){
+          if(e1 === e2) return;
+          var base1 = e1.toLabel.replace('×',''), neg1 = e1.toLabel.indexOf('×') !== -1;
+          var base2 = e2.toLabel.replace('×',''), neg2 = e2.toLabel.indexOf('×') !== -1;
+          if(base1 === base2 && neg1 !== neg2){ contradictionIds[e1.id] = true; contradictionIds[e2.id] = true; }
+        });
+      });
+    });
+
+    // 5) nodes (+ pairing X / X× into one fused capsule)
     function styleFor(label){
       var negated = label.indexOf('×') !== -1;
       if(negated){
@@ -328,48 +556,218 @@
       }
       return { color:{ background:'#e8c468', border:'#b98f3a', highlight:{background:'#f0d484', border:'#b98f3a'} }, font:{ color:'#14181a' } };
     }
-    function getId(label){
+    var nodeMap = new Map(), nodes = [];
+    function ensureNode(label){
       if(!nodeMap.has(label)){
         var id = nodeMap.size + 1;
-        var style = styleFor(label);
         nodeMap.set(label, id);
+        var style = styleFor(label);
         nodes.push({ id:id, label:label, shape:'ellipse',
           font:Object.assign({face:'IBM Plex Mono', size:16}, style.font),
-          borderWidth:2, margin:10, color: style.color });
+          borderWidth:2, margin:10, color:style.color });
       }
       return nodeMap.get(label);
     }
+    mergedEdges.forEach(function(e){ ensureNode(e.fromLabel); ensureNode(e.toLabel); });
 
-    groupedRaw.forEach(function(group){
-      var rowEdgeInfo = [];
-      group.rows.forEach(function(r){
-        if(!r.subj || !r.pred) return;
-        var fromLabel = labelOf(r.subj, r.subjNeg), toLabel = labelOf(r.pred, r.predNeg);
-        var fromId = getId(fromLabel), toId = getId(toLabel);
-        var solid = (r.quant === '모든');
-        var eid = 'e' + (edgeCounter++);
-        edges.push({ id:eid, from:fromId, to:toId, dashes: !solid, arrows:'to',
-          color:{ color: solid ? '#7fb3d5' : '#e2a6c5', highlight: solid ? '#7fb3d5' : '#e2a6c5' },
-          width:2, smooth:{ type:'continuous' } });
-        rowEdgeInfo.push({ eid:eid, fromLabel:fromLabel, toLabel:toLabel });
+    var labelToNode = {};
+    nodes.forEach(function(n){ labelToNode[n.label] = n; });
+    var pairs = [];
+    nodes.forEach(function(n){
+      if(n.label.indexOf('×') !== -1) return; // handled from the plain side
+      var negNode = labelToNode[n.label + '×'];
+      if(negNode){ pairs.push({ baseId:n.id, negId:negNode.id, baseNode:n, negNode:negNode }); }
+    });
+    pairs.forEach(function(p){
+      [p.baseNode, p.negNode].forEach(function(n){
+        n.shape = 'box';
+        n.shapeProperties = { borderRadius:0 };
+        n.widthConstraint = { minimum:PAIR_BOX_W, maximum:PAIR_BOX_W };
+        n.heightConstraint = { minimum:PAIR_BOX_H, maximum:PAIR_BOX_H };
+        n.margin = 4;
       });
-      if(rowEdgeInfo.length === 3){
-        var e1 = rowEdgeInfo[0], e2 = rowEdgeInfo[1], e3 = rowEdgeInfo[2];
-        var set1 = [e1.fromLabel, e1.toLabel], set2 = [e2.fromLabel, e2.toLabel];
-        var middleLabel = null;
-        set1.forEach(function(l){ if(set2.indexOf(l) !== -1) middleLabel = l; });
-        if(middleLabel){
-          triples.push({
-            middleNodeId: nodeMap.get(middleLabel),
-            premiseEdgeIds: [e1.eid, e2.eid],
-            conclusionEdgeId: e3.eid,
-            midHidden:false, conclHidden:false
-          });
-        }
-      }
+      p.negNode.physics = false; // position is slaved to its base node, see renderGraphView
     });
 
-    return { nodes:nodes, edges:edges, triples:triples };
+    // 6) final vis.js edges
+    var visEdges = mergedEdges.map(function(e){
+      var color;
+      if(contradictionIds[e.id]) color = CONTRADICTION_COLOR;
+      else if(e.colorRole === 'conclusion') color = CONCLUSION_COLOR;
+      else if(e.colorRole === 'premise') color = PREMISE_COLOR;
+      else color = NO_ROLE_COLOR;
+      return { id:e.id, from:nodeMap.get(e.fromLabel), to:nodeMap.get(e.toLabel),
+        dashes: !e.solid, arrows:'to',
+        color:{ color:color, highlight:color },
+        width: contradictionIds[e.id] ? 3 : 2,
+        smooth:{ type:'continuous' } };
+    });
+
+    // 7) triples for the double-click show/hide behaviour, resolved to the
+    // (now possibly shared/merged) edge ids
+    var triples = [];
+    rawByGroup.forEach(function(gInfo){
+      if(!gInfo.hasTriangle || gInfo.edges.length !== 3) return;
+      var e1 = gInfo.edges[0], e2 = gInfo.edges[1], e3 = gInfo.edges[2];
+      var eid1 = edgeKeyToId[e1.fromLabel + '\u0001' + e1.toLabel];
+      var eid2 = edgeKeyToId[e2.fromLabel + '\u0001' + e2.toLabel];
+      var eid3 = edgeKeyToId[e3.fromLabel + '\u0001' + e3.toLabel];
+      if(!eid1 || !eid2 || !eid3) return;
+      triples.push({ middleNodeId: nodeMap.get(gInfo.middleLabel),
+        premiseEdgeIds:[eid1, eid2], conclusionEdgeId:eid3, midHidden:false, conclHidden:false });
+    });
+
+    return { nodes:nodes, edges:visEdges, triples:triples, pairs:pairs, mergedEdges:mergedEdges };
+  }
+
+  // ---------------------------------------------------------------
+  // Whole-graph statistics: disconnected components, bridge ("weak
+  // connection") edges, premise/conclusion arrow counts, and how many
+  // groups form a defective triangle.
+  // ---------------------------------------------------------------
+  function countComponents(nodes, edges){
+    var adj = {};
+    nodes.forEach(function(n){ adj[n.id] = []; });
+    edges.forEach(function(e){ adj[e.from].push(e.to); adj[e.to].push(e.from); });
+    var seen = {}, count = 0;
+    nodes.forEach(function(n){
+      if(seen[n.id]) return;
+      count++;
+      var queue = [n.id]; seen[n.id] = true;
+      while(queue.length){
+        var cur = queue.shift();
+        adj[cur].forEach(function(nb){ if(!seen[nb]){ seen[nb] = true; queue.push(nb); } });
+      }
+    });
+    return count;
+  }
+
+  // Bridge edges (Tarjan's algorithm, multigraph-safe via edge id) whose
+  // removal would split the graph, keeping only ones that separate two
+  // genuinely sized chunks (>=2 nodes each side) rather than just lopping
+  // off a single leaf node.
+  function countWeakBridges(nodes, edges){
+    var adj = {};
+    nodes.forEach(function(n){ adj[n.id] = []; });
+    edges.forEach(function(e){
+      adj[e.from].push({ to:e.to, eid:e.id });
+      adj[e.to].push({ to:e.from, eid:e.id });
+    });
+    var visited = {}, disc = {}, low = {}, subtreeSize = {};
+    var timer = 0;
+    var candidates = []; // {eid, smallerSide, root}
+    function dfs(u, parentEdgeId, root){
+      visited[u] = true;
+      disc[u] = low[u] = timer++;
+      subtreeSize[u] = 1;
+      adj[u].forEach(function(edge){
+        if(edge.eid === parentEdgeId) return;
+        if(!visited[edge.to]){
+          dfs(edge.to, edge.eid, root);
+          subtreeSize[u] += subtreeSize[edge.to];
+          low[u] = Math.min(low[u], low[edge.to]);
+          if(low[edge.to] > disc[u]){
+            candidates.push({ eid:edge.eid, smallerSide:subtreeSize[edge.to], root:root });
+          }
+        } else {
+          low[u] = Math.min(low[u], disc[edge.to]);
+        }
+      });
+    }
+    nodes.forEach(function(n){ if(!visited[n.id]) dfs(n.id, null, n.id); });
+    var weak = 0;
+    candidates.forEach(function(c){
+      var componentTotal = subtreeSize[c.root];
+      var otherSide = componentTotal - c.smallerSide;
+      if(c.smallerSide >= 2 && otherSide >= 2) weak++;
+    });
+    return weak;
+  }
+
+  // Counted from the DEDUPLICATED arrow set, not raw input rows — a merged
+  // arrow that is a conclusion anywhere counts as a conclusion (conclusion
+  // wins ties), so this is no longer a fixed 2:1 shape.
+  function countPremiseConclusion(mergedEdges){
+    var premise = 0, conclusion = 0;
+    mergedEdges.forEach(function(e){
+      if(e.statsRole === 'conclusion') conclusion++; else premise++;
+    });
+    return { premise:premise, conclusion:conclusion };
+  }
+
+  // Per-syllogism-set "triangle" defects: a set is expected to draw as a
+  // closed triangle of 3 nodes / 3 arrows. Flags: the triangle never even
+  // closes (disconnected/incomplete/mismatched terms), it closes but every
+  // side is a dashed(어떤) arrow, or it closes but every node is negated(×).
+  function analyzeTriangles(groupedRaw){
+    var noTriangle = 0, dashedOnly = 0, xOnly = 0, totalDefective = 0;
+    groupedRaw.forEach(function(group){
+      var filledCount = group.rows.filter(function(r){ return r.subj && r.pred; }).length;
+      if(filledCount === 0) return; // untouched set, not a "defect"
+      var defective = false;
+      if(filledCount !== 3){
+        noTriangle++; defective = true;
+      } else {
+        var edges = computeGroupEdges(group);
+        var labelSet = {};
+        edges.forEach(function(e){ labelSet[e.fromLabel] = 1; labelSet[e.toLabel] = 1; });
+        var distinct = Object.keys(labelSet);
+        if(distinct.length !== 3){
+          noTriangle++; defective = true;
+        } else {
+          if(edges.every(function(e){ return !e.solid; })){ dashedOnly++; defective = true; }
+          if(distinct.every(function(l){ return l.indexOf('×') !== -1; })){ xOnly++; defective = true; }
+        }
+      }
+      if(defective) totalDefective++;
+    });
+    return { noTriangle:noTriangle, dashedOnly:dashedOnly, xOnly:xOnly, total:totalDefective };
+  }
+
+  function computeGraphStats(bundle, groupedRaw){
+    var components = countComponents(bundle.nodes, bundle.edges);
+    var weakBridges = countWeakBridges(bundle.nodes, bundle.edges);
+    var pc = countPremiseConclusion(bundle.mergedEdges);
+    var ratio = pc.conclusion > 0 ? (pc.premise / pc.conclusion) : null;
+    var defects = analyzeTriangles(groupedRaw);
+    return {
+      components: components,
+      weakBridges: weakBridges,
+      premise: pc.premise,
+      conclusion: pc.conclusion,
+      totalArrows: pc.premise + pc.conclusion,
+      ratio: ratio,
+      defects: defects
+    };
+  }
+
+  function renderGraphStats(stats){
+    var grid = document.getElementById('statsGrid');
+    if(!grid) return;
+    var ratioText = stats.ratio === null ? 'N/A' : (stats.ratio.toFixed(2) + ' : 1');
+    grid.innerHTML =
+      '<div class="stat-chip' + (stats.components > 1 ? ' warn' : ' ok') + '">' +
+        '<div class="stat-value">' + stats.components + '<b>개</b></div>' +
+        '<div class="stat-label">분리된 그룹(연결 요소)</div>' +
+      '</div>' +
+      '<div class="stat-chip' + (stats.weakBridges > 0 ? ' warn' : '') + '">' +
+        '<div class="stat-value">' + stats.weakBridges + '<b>개</b></div>' +
+        '<div class="stat-label">약한 연결 — 화살표 하나로만 이어진 다리</div>' +
+      '</div>' +
+      '<div class="stat-chip">' +
+        '<div class="stat-value">' + stats.totalArrows + '<b>개</b></div>' +
+        '<div class="stat-label">전체 화살표</div>' +
+        '<div class="stat-sub">가정 ' + stats.premise + ' · 결론 ' + stats.conclusion + '</div>' +
+      '</div>' +
+      '<div class="stat-chip">' +
+        '<div class="stat-value">' + ratioText + '</div>' +
+        '<div class="stat-label">결론 화살표 대비 가정 화살표 비율</div>' +
+      '</div>' +
+      '<div class="stat-chip' + (stats.defects.total > 0 ? ' warn' : ' ok') + '">' +
+        '<div class="stat-value">' + stats.defects.total + '<b>개</b></div>' +
+        '<div class="stat-label">논리적으로 결함이 있는 삼각형</div>' +
+        '<div class="stat-sub">미형성 ' + stats.defects.noTriangle + ' · 점선만 ' + stats.defects.dashedOnly + ' · X만 ' + stats.defects.xOnly + '</div>' +
+      '</div>';
   }
 
   // ---------------------------------------------------------------
@@ -396,32 +794,71 @@
     5:{M:'circle',S:'fan',P:'fan'},
     6:{M:'circle',S:'fan',P:'fan'},
     7:{M:'circle',S:'fan',P:'fan'},
-    8:{M:'fan',S:'fan',P:'circle'},
+    8:{M:'circle',S:'fan',P:'fan'},
     9:{M:'circle',S:'fan',P:'fan'}
   };
+  // NOTE on 8 and 9: as typed by the user these two moods have the middle
+  // term M as the SUBJECT of both premises, which — taken literally — only
+  // gives "M contained in X" and "M contained in Y" with no stated relation
+  // between X and Y, so a single connected diagram isn't directly available.
+  // Both moods have one PARTICULAR premise though, and a particular premise
+  // ("어떤 A는 B(가 아니다)") can always be restated with subject and
+  // predicate swapped without changing its meaning (그것은 그냥
+  // "A이고 B" ↔ "B이고 A" 의 순서를 바꾼 것과 같음), which turns the fork
+  // into a genuine chain:
+  //   8: "모든 P는 M이다" + "어떤 S는 M이 아니다" -> rewrite premise 1 as
+  //      its contrapositive "모든 M이 아닌 것은 P가 아니다" (M×⊂P×), which
+  //      now shares M× with premise 2's predicate -> P× ⊃ M× ⊃ S.
+  //   9: "어떤 M은 P가 아니다" + "모든 M은 S이다" -> restate premise 1 as
+  //      "어떤 P가 아닌 것은 M이다" (P×⊂M), which now shares M with
+  //      premise 2's subject -> S ⊃ M ⊃ P×.
+  // Both rewrites are logically equivalent to what the user typed; only the
+  // diagram's internal layout uses them, the validity check above still
+  // matches the sentences exactly as entered.
   var LAYOUT_TABLE = {
-    1:{type:'chain', order:['P','M','S'], negRole:null},
-    2:{type:'chain', order:['P','S','M'], negRole:null},
-    3:{type:'chain', order:['S','M','P'], negRole:null},
-    4:{type:'chain', order:['P','M','S'], negRole:'P'},
-    5:{type:'chain', order:['P','S','M'], negRole:'P'},
-    6:{type:'chain', order:['P','M','S'], negRole:null},
-    7:{type:'chain', order:['P','M','S'], negRole:'P'},
-    8:{type:'split', clusters:[['M','P'],['M','S']], negCluster:1, negRole:'M'},
-    9:{type:'chain', order:['P','S','M'], negRole:'P'}
+    1:{type:'chain', order:['P','M','S'], negRoles:[]},
+    2:{type:'chain', order:['P','S','M'], negRoles:[]},
+    3:{type:'chain', order:['S','M','P'], negRoles:[]},
+    4:{type:'chain', order:['P','M','S'], negRoles:['P']},
+    5:{type:'chain', order:['P','S','M'], negRoles:['P']},
+    6:{type:'chain', order:['P','M','S'], negRoles:[]},
+    7:{type:'chain', order:['P','M','S'], negRoles:['P']},
+    8:{type:'chain', order:['P','M','S'], negRoles:['P','M']},
+    9:{type:'chain', order:['S','M','P'], negRoles:['P']}
   };
 
   function typeOf(r){ return r.quant === '모든' ? (r.predNeg ? 'E' : 'A') : (r.predNeg ? 'O' : 'I'); }
 
+  // A statement typed with subject negation ("M이 아닌 것은 …") is often
+  // just an equivalent restatement of a plain statement, and should be
+  // recognised as such rather than rejected outright:
+  //   - 모든 A가 아닌 것은 B가 아니다  ==  모든 B는 A이다   (contraposition)
+  //   - 어떤 A가 아닌 것은 B이다      ==  어떤 B는 A가 아니다 (particular statements
+  //     just assert "A and B together", so subject/predicate freely swap)
+  // Anything else with subject negation doesn't reduce to a plain form and
+  // is left unmatched (returns null).
+  function normalizeStatement(r){
+    if(!r.subjNeg) return r;
+    if(r.quant === '모든' && r.predNeg){
+      return { quant:'모든', subj:r.pred, subjNeg:false, pred:r.subj, predNeg:false };
+    }
+    if(r.quant === '어떤' && !r.predNeg){
+      return { quant:'어떤', subj:r.pred, subjNeg:false, pred:r.subj, predNeg:true };
+    }
+    return null;
+  }
+
   function matchGroup(rows){
     if(rows.length !== 3) return null;
-    if(rows.some(function(r){ return r.subjNeg; })) return null;
-    var c = rows[2];
-    var premiseOrders = [[rows[0],rows[1]],[rows[1],rows[0]]];
+    var normRows = rows.map(normalizeStatement);
+    if(normRows.some(function(r){ return r === null; })) return null;
+    var c = normRows[2];
+    var premiseOrders = [[0,1],[1,0]];
     for(var ti=0; ti<TEMPLATES.length; ti++){
       var T = TEMPLATES[ti];
       for(var oi=0; oi<premiseOrders.length; oi++){
-        var p1 = premiseOrders[oi][0], p2 = premiseOrders[oi][1];
+        var i1 = premiseOrders[oi][0], i2 = premiseOrders[oi][1];
+        var p1 = normRows[i1], p2 = normRows[i2];
         var roleMap = {}, wordMap = {};
         function assign(word, role){
           if(!word) return false;
@@ -436,7 +873,7 @@
         if(ok && wordMap.M && wordMap.S && wordMap.P){
           var uniq = {}; uniq[wordMap.M]=1; uniq[wordMap.S]=1; uniq[wordMap.P]=1;
           if(Object.keys(uniq).length === 3){
-            return { template:T, roleToWord:wordMap };
+            return { template:T, roleToWord:wordMap, p1RowIndex:i1, p2RowIndex:i2 };
           }
         }
       }
@@ -452,7 +889,7 @@
     var layout = LAYOUT_TABLE[id];
     var shapes = SHAPES_TABLE[id];
     function itemFor(role){
-      var neg = (layout.negRole === role);
+      var neg = layout.negRoles.indexOf(role) !== -1;
       return { role:role, label: labelOf(m.roleToWord[role], neg), shape: shapes[role] };
     }
     var result = { status:'valid', groupIndex:group.index, templateId:id, templateDesc:m.template.desc, diagramType:layout.type };
@@ -461,7 +898,7 @@
     } else {
       result.clusters = layout.clusters.map(function(rolesArr, ci){
         return rolesArr.map(function(role){
-          var neg = (layout.negCluster === ci && layout.negRole === role);
+          var neg = (layout.negCluster === ci) && layout.negRoles.indexOf(role) !== -1;
           return { role:role, label: labelOf(m.roleToWord[role], neg), shape: shapes[role] };
         });
       });
@@ -983,6 +1420,19 @@
     currentEdgesDS = new vis.DataSet(currentGraphBundle.edges);
     network = new vis.Network(container, { nodes:currentNodesDS, edges:currentEdgesDS }, graphOptions);
 
+    // Keep every X / X× pair fused together as a two-tone capsule: X× has
+    // no physics of its own and is pinned right next to X every frame.
+    if(currentGraphBundle.pairs && currentGraphBundle.pairs.length){
+      network.on('afterDrawing', function(){
+        var baseIds = currentGraphBundle.pairs.map(function(p){ return p.baseId; });
+        var positions = network.getPositions(baseIds);
+        currentGraphBundle.pairs.forEach(function(p){
+          var basePos = positions[p.baseId];
+          if(basePos){ network.moveNode(p.negId, basePos.x + PAIR_BOX_W, basePos.y); }
+        });
+      });
+    }
+
     network.on('doubleClick', function(params){
       if(params.nodes && params.nodes.length === 1){
         var nid = params.nodes[0];
@@ -1008,9 +1458,15 @@
     });
 
     document.getElementById('dragHint').textContent =
-      '노드를 드래그해서 위치를 옮길 수 있습니다. 가운데(중간 개념) 노드를 더블클릭하면 결론 화살표를, 결론 화살표를 더블클릭하면 중간 노드를 숨기거나 다시 보이게 할 수 있습니다.';
+      '노드를 드래그해서 위치를 옮길 수 있습니다. X/X× 쌍은 하나의 캡슐처럼 붙어서 함께 움직입니다. 가운데(중간 개념) 노드를 더블클릭하면 결론 화살표를, 결론 화살표를 더블클릭하면 중간 노드를 숨기거나 다시 보이게 할 수 있습니다.';
     document.getElementById('legendBox').innerHTML =
-      '<span><i></i> 모든 (전칭)</span><span><i class="dash"></i> 어떤 (특칭)</span><span><b>×</b> 부정(아니다)</span>';
+      '<span><i class="ls-solid"></i> 모든 (전칭)</span>' +
+      '<span><i class="ls-dashed"></i> 어떤 (특칭)</span>' +
+      '<span><i class="ls-premise"></i> 가정 화살표</span>' +
+      '<span><i class="ls-conclusion"></i> 결론 화살표</span>' +
+      '<span><i class="ls-exception"></i> 역할 불명 (삼각형 미형성)</span>' +
+      '<span><i class="ls-contradiction"></i> 모순 (같은 노드에서 X·X× 모두로 전칭)</span>' +
+      '<span><b>×</b> 부정(아니다)</span>';
   }
 
   function renderDiagramView(){
@@ -1052,6 +1508,7 @@
     document.getElementById('toggleBtn').textContent = '다이어그램으로 보기';
 
     renderCurrentView();
+    renderGraphStats(computeGraphStats(currentGraphBundle, grouped));
     renderEvalList(currentGroupResults, contradictions, cycles);
   });
 
